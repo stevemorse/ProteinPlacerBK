@@ -1,0 +1,415 @@
+package NLP;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.support.ui.Wait;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import protein.Protein;
+import utils.SingleLock;
+
+import com.google.common.base.Function;
+
+/**
+ * A thread class to handle the processing of one Protein.  
+ *  It mines the text of accessions from a balstx balst 2 go search for keywords to
+ * the location of expression points.  It also them loads all GO html anchors 
+ * into the protein and checks if any are GO cellular_components.
+ * @author Steve Morse
+ * @version 1.0
+ *
+ */
+public class SingleGoProteinProcessingThread extends Thread{
+	
+	private Protein currentProtein = null;
+	private Map<String, String> GoAnnotationLocations = null;
+	private Map<String, String> currentAccessionIds = null;
+	private File outFile = null;
+	private double thresholdEValue = 0;
+	private boolean debug = true;
+	//private static File proteinsOutFile = new File("/home/steve/Desktop/ProteinPlacer/proteinsOut.bin");
+	private  ObjectOutputStream oos = null;
+	
+	//String PBlastURL = "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?PROGRAM=blastp&BLAST_PROGRAMS=blastp&PAGE_TYPE=BlastSearch&SHOW_DEFAULTS=on&LINK_LOC=blasthome";
+	String XBlastURL = "http://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastx&BLAST_PROGRAMS=blastx&PAGE_TYPE=BlastSearch&SHOW_DEFAULTS=on&LINK_LOC=blasthome";
+	
+	/**
+	 * Sole Constructor
+	 * @param currentProtein	The protein the thread is to process.
+	 * @param GoAnnotationLocations	A Map of all GO cellular components GO values and names.
+	 * @param outFile	Debug text output file.
+	 * @param thresholdEValue	The cut off eValue for processing BlastP matches for the protein's sequence.
+	 * @param debug
+	 */
+	public SingleGoProteinProcessingThread(Protein currentProtein, Map<String, String> currentAccessionIds, 
+			Map<String, String> GoAnnotationLocations, File outFile, ObjectOutputStream oos, double thresholdEValue, boolean debug){
+		this.currentProtein = currentProtein;
+		this.GoAnnotationLocations = GoAnnotationLocations;
+		this.currentAccessionIds = currentAccessionIds;
+		this.outFile = outFile;
+		this.thresholdEValue = thresholdEValue;
+		this.debug = debug;
+		this.oos = oos;
+	}
+	
+	/**
+	 * Processes all accession links with an eValue less than the threshold eValue.
+	 */
+	public void run() throws org.openqa.selenium.WebDriverException{
+		if(currentAccessionIds != null){
+			List<String> accessions =  new ArrayList<String>(currentAccessionIds.keySet());
+			ListIterator<String> accessionsLiter = accessions.listIterator();
+			boolean done = false;
+			boolean firstAccession = true;
+			while(accessionsLiter.hasNext() && !done){
+				String accessionName = accessionsLiter.next();
+				String eValueText = currentAccessionIds.get(accessionName);
+				double eValue = Double.parseDouble(eValueText);
+				if(debug){
+					System.out.println("accession value: " + accessionName);
+					System.out.println("eValueText in decimal: " + eValue);
+				}//if debug
+					if(eValue < thresholdEValue){
+						String region = processAnchorLink(currentProtein,accessionName,GoAnnotationLocations, outFile, firstAccession, debug);
+						firstAccession = false;
+						if(region != null && region.compareTo("not found") != 0){
+							if(debug){
+								System.out.println("found region is: " + region);
+							}//if debug
+							currentProtein.setPlacedByText(true);
+							currentProtein.setExpressionPointText(region);
+							//done = true;
+						}
+						else{
+							if(debug){
+								System.out.println("NOT FOUND IN TEXT: " + region);
+							}//if debug
+						}
+					}//if eValue
+			}//accessionsLiter has next
+		}//accessions not null
+		currentProtein.setProcessed(true);  //fully processed by this point
+		
+		if (debug){
+			System.out.println("Protein:\n" + currentProtein.toString());
+		}//if debug
+		
+		SingleLock lock = SingleLock.getInstance();
+		synchronized(lock){
+			try{
+				oos.writeObject(currentProtein);
+			} catch (FileNotFoundException fnfe) {
+				System.err.println("error opening output file: " + fnfe.getMessage());
+				fnfe.printStackTrace();
+			} catch (IOException ioe) {
+				System.err.println("error opening output stream: " + ioe.getMessage());
+				ioe.printStackTrace();
+			}//try block
+		}//synchronized
+	}//run method
+	
+
+	/**
+	 * Processes a single http link corresponding to a putative match returned 
+	 * from the Blast search performed on the protein's sequence.
+	 * @param currentProtien	The protein being processed.
+	 * @param url	The current url link to process for this protein.
+	 * @param GoAnnotationLocations	A Map of all GO cellular components GO values and names.
+	 * @param outFile	Debug text out file.
+	 * @param debug	Verbose flag.
+	 * @param firstDFLink extract protein sequence from origin field for first dflink (lowest eValue)
+	 * @return A String naming the expression point if found or "not found" otherwise.
+	 */
+	public String processAnchorLink(Protein currentProtien, String accession, Map<String, String>GoAnnotationLocations, 
+			File outFile, boolean firstDFLink, boolean debug) throws org.openqa.selenium.WebDriverException{
+		
+		String foundRegion = "not found";
+		List<WebElement> featureElements = null;
+		WebElement inputTextFeildElement = null;
+		String proteinPageUrl = "http://www.ncbi.nlm.nih.gov/protein/";
+		final WebDriver driver = new FirefoxDriver();
+		
+		//get protein page
+		boolean done = true;
+		do{
+			driver.get(proteinPageUrl);
+			
+			final Wait<WebDriver> waitDriver = new FluentWait<WebDriver>(driver)
+				       .withTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+				       .pollingEvery(5, java.util.concurrent.TimeUnit.SECONDS);
+			try{
+				inputTextFeildElement = waitDriver.until(new Function<WebDriver,WebElement>(){
+					public WebElement apply(WebDriver diver){
+						return driver.findElement(By.name("term"));
+						}});
+			}
+			catch(NoSuchElementException nsee){
+				done = false;
+			}
+		}while(!done);
+		
+		//enter accession string into protein page search box and submit query
+		inputTextFeildElement.sendKeys(accession);
+		inputTextFeildElement.submit();
+		
+		//get and process genebank text for the protein accession string corresponds to
+		String source = driver.getPageSource();	
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException ie) {
+			System.out.println("InterruptedException: " + ie.getMessage());
+			ie.printStackTrace();
+		}
+		
+		boolean gotFeatures = false;
+		while(!gotFeatures){
+			try{
+				featureElements = ((RemoteWebDriver) driver).findElementsByClassName("feature");
+				gotFeatures = true;
+			}
+			catch(NoSuchElementException nsee){
+				gotFeatures = false;
+			}
+		}//while not gotFeatures
+		
+		boolean matched = false;
+		System.out.println("number of features = " + featureElements.size());
+		ListIterator<WebElement> featureElementsLiter = featureElements.listIterator();
+		while(featureElementsLiter.hasNext() && !matched){
+			WebElement feature = featureElementsLiter.next();
+			String featureText = feature.getText();
+			List<String> cellLocationNames = new ArrayList<String>(GoAnnotationLocations.values());
+			ListIterator<String> cellLocationNamesLiter = cellLocationNames.listIterator();
+			while(cellLocationNamesLiter.hasNext()  && !matched){
+				boolean falseMatch = false;
+				String cellLocationName = cellLocationNamesLiter.next();
+				String seperateName = " " + cellLocationName.toLowerCase() + " ";
+				if((featureText.toLowerCase()).contains((seperateName.toLowerCase()))){
+					//check for exact match on String "axon"
+					if(cellLocationName.toLowerCase().compareTo("axon") == 0){
+						int numAxon = (featureText.toLowerCase()).split("axon").length;
+						int numTaxon = (featureText.toLowerCase()).split("taxon").length;
+						if(numAxon == numTaxon){
+							falseMatch = true;
+						}//if axons == taxons
+					}//if location is "axon"
+					if(cellLocationName.toLowerCase().compareTo("organelle") == 0){
+						int numOrganelle = (featureText.toLowerCase()).split("organelle").length;
+						int numOrganelleFalse = (featureText.toLowerCase()).split("/organelle=").length;
+						if(numOrganelle == numOrganelleFalse){
+							falseMatch = true;
+						}//if assignment of organelles
+					}//if location is "organelles"
+					if(cellLocationName.toLowerCase().compareTo("chromosome") == 0){
+						int numOrganelle = (featureText.toLowerCase()).split("chromosome").length;
+						int numOrganelleFalse = (featureText.toLowerCase()).split("/chromosome=").length;
+						int numOrganelleFalse2 = (featureText.toLowerCase()).split("/note=\"contig chromosome").length;
+						if(numOrganelle == numOrganelleFalse || numOrganelle == numOrganelleFalse2){
+							falseMatch = true;
+						}//if assignment of chromosome
+					}//if location is "chromosome"
+					
+					if(!falseMatch){
+						foundRegion = cellLocationName;
+						matched = true;
+						System.out.println("MATCH FOUND IN FEATURES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!:");
+					}
+				}//if term in feature
+			}//while termsLiter
+		}//while featureElementsLiter
+		
+		final Wait<WebDriver> waitingDriver = new FluentWait<WebDriver>(driver)
+			       .withTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+			       .pollingEvery(5, java.util.concurrent.TimeUnit.SECONDS);
+		
+		WebElement genbank = null;
+		while(genbank == null){
+			try{
+				genbank = waitingDriver.until(new Function<WebDriver,WebElement>(){
+					public WebElement apply(WebDriver diver){
+						return driver.findElement(By.className("genbank"));
+						}});
+			
+			}//try
+			catch(NoSuchElementException nsee){
+				genbank = null;
+				System.out.println("no genebank elemant returned for accession: " + accession + " " + nsee.getMessage());
+			}//catch
+		}//while not got genebank element
+		
+		String genbankText = genbank.getText();
+		
+		if(debug){
+			PrintWriter	writer = null;
+			try {
+				writer = new PrintWriter(new FileWriter(outFile));
+			} catch (IOException e) {
+				System.out.println("IOException: " + e.getMessage());
+				e.printStackTrace();
+			}
+			writer.println("putative source text..............................................................\n");
+			writer.println(source);
+			writer.flush();
+			writer.println("putative genbank text..............................................................\n");
+			writer.println(genbankText);
+			writer.flush();
+			writer.close();
+		}//if debug
+			
+		//check KEYWORDS area of genbank text for location keywords if not found in features
+		if (matched = false){
+			int keywordPosition = genbankText.indexOf("KEYWORDS") + "KEYWORDS".length();
+			int sourcePosition = genbankText.indexOf("SOURCE");
+			String keywordText = genbankText.substring(keywordPosition, sourcePosition);
+			List<String> cellLocationNames = new ArrayList<String>(GoAnnotationLocations.values());
+			ListIterator<String> termsLiter = cellLocationNames.listIterator();
+			while(termsLiter.hasNext()  && !matched){
+				String term = termsLiter.next();
+				if((keywordText.toLowerCase()).contains((term.toLowerCase()))){
+					foundRegion = term;
+					matched = true;
+					System.out.println("MATCH FOUND IN KEYWORDS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!:");
+				}//if term in KEYWORDS area
+			}//while termsLiter
+		}//if (matched = false)
+		
+		//extract and load protein sequence
+		if(firstDFLink){
+			int originPosition = genbankText.indexOf("ORIGIN") + 6;
+			String originText = genbankText.substring(originPosition);
+			originText = originText.replaceAll("\\d", "");
+			originText = originText.replaceAll("\\s", "");
+			originText = originText.replaceAll("/", "");
+			originText = originText.trim();
+			currentProtein.setProteinSequence(originText);
+			if(debug){
+				System.out.println("\n\n\n\n\n\n\n\n\nputative genbank text..............................................................\n");
+				System.out.println(genbankText);
+				System.out.println("proteinSequence is: " + originText);
+			}//if debug
+		}
+			
+		//extract all GO and GOA text spans in genbank text
+		List<String> goAssensionTextList = new ArrayList<String>();
+		String[] goTexts = genbankText.split("GO:");
+		for(int goTextsCount = 1; goTextsCount < goTexts.length; goTextsCount++){
+			String goAssensionText = goTexts[goTextsCount].substring(0,7);
+			goAssensionTextList.add(goAssensionText);
+		}
+		System.out.println("number of GO terms: " + goAssensionTextList.size());
+		
+		List<String> goAssensionQuickTextList = new ArrayList<String>();
+		String[] goATexts = genbankText.split("GOA:");
+		for(int goATextsCount = 1; goATextsCount < goATexts.length; goATextsCount++){
+			String goAssensionText = goATexts[goATextsCount].substring(0,7);
+			goAssensionQuickTextList.add(goAssensionText);
+		}
+		System.out.println("number of GOA terms: " + goAssensionQuickTextList.size());
+		
+		//get all anchors in genbank text
+		//List<String> goAnchorLinks = new ArrayList<String>();
+		List<WebElement> genebankAnchors = genbank.findElements(By.tagName("a"));
+		System.out.println("number of genebank anchors found: " + genebankAnchors.size());
+		ListIterator<WebElement> goAnchorsLiter = genebankAnchors.listIterator();
+		while(goAnchorsLiter.hasNext()){
+			WebElement currentGoAnchor = goAnchorsLiter.next();
+			String currentGoAnchorString = currentGoAnchor.getText();
+			String currentGoAnchorURLString = currentGoAnchor.getAttribute("href");
+			System.out.println("GO anchor text: " + currentGoAnchorString + " href is: " + currentGoAnchorURLString);
+			if(goAssensionTextList.contains(currentGoAnchorString)){				
+				processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GO", debug);		
+			}
+			if(goAssensionQuickTextList.contains(currentGoAnchorString)){				
+				processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GOA", debug);		
+			}
+		}//while(goAnchorsLiter.hasNext())
+
+		driver.quit();
+		return foundRegion;
+	}//processAnchorLinks
+	
+	/**
+	 * Processes a link to either an AmiGO or classic GO web page to extract GO 
+	 * annotations, if there are any more, and see if any are GO 
+	 * cellular_components.  Loads results into the current protein.
+	 * @param currentProtein The protein being processed.
+	 * @param url The current GO link to process for this protein.
+	 * @param currentGoAnchorString  the text value of that anchor link.
+	 * @param GoAnnotationLocations	A Map of all GO cellular components GO values and names.
+	 * @param TypeOfGoLookup identifies the link as a classic GO anchor or an AmiGO anchor. 
+	 * @param debug	Verbose flag.
+	 */
+	public void processGoAnchor(Protein currentProtein, String url, String currentGoAnchorString, 
+			Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, boolean debug) throws org.openqa.selenium.WebDriverException{
+		
+		String amiGoTextClassName = "name";
+		String quickGoAnnotationRowOddName = "annotation-row-odd";
+		String quickGoAnnotationRowEvenName = "annotation-row-even";
+		String quickGoTextClassName = "info-definition";
+		String quickGoIDTagName = "a";
+		
+		WebDriver driver = new FirefoxDriver();
+		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+		driver.get(url);
+		
+		if(TypeOfGoLookup.compareTo("GO") == 0){	//tradition Go web interface
+			
+			WebElement nameElement = ((RemoteWebDriver) driver).findElementByClassName(amiGoTextClassName);
+			String nameTextString = nameElement.getText();
+			if(currentProtein.getAnnotations() == null){
+				currentProtein.setAnnotations(new HashMap<String, String>());
+			}
+			(currentProtein.getAnnotations()).put(currentGoAnchorString, nameTextString);
+			List<String> cellLocationGOCodes = new ArrayList<String>(GoAnnotationLocations.keySet());
+			if(cellLocationGOCodes.contains(currentGoAnchorString) && !currentProtein.isPlacedByGOTerms()){
+				currentProtein.setPlacedByGOTerms(true);
+				currentProtein.setExpressionPointGOText(nameTextString);
+			}//if(cellLocationGOCodes.contains(currentGoAnchorString)
+		}//if TypeOfGoLookup
+		else if (TypeOfGoLookup.compareTo("GOA") == 0){	//quick GO web interface	
+			List<WebElement> evenRowElements = ((RemoteWebDriver) driver).findElementsByClassName(quickGoAnnotationRowEvenName);
+			List<WebElement> oddRowElements = ((RemoteWebDriver) driver).findElementsByClassName(quickGoAnnotationRowOddName);
+			List<WebElement> allRowElements = new ArrayList<WebElement>();
+			List<String> cellLocationGOCodes = new ArrayList<String>(GoAnnotationLocations.keySet());
+			allRowElements.addAll(evenRowElements);
+			allRowElements.addAll(oddRowElements);
+			ListIterator<WebElement> allRowElementsLiter = allRowElements.listIterator();
+			while(allRowElementsLiter.hasNext()){
+				WebElement currentRowElement = allRowElementsLiter.next();
+				WebElement goElement = currentRowElement.findElement(By.tagName(quickGoIDTagName));
+				WebElement goDefinitionElement = currentRowElement.findElement(By.className(quickGoTextClassName));
+				String goElementTextString = goElement.getText();
+				String goDefinitionElementTextString = goDefinitionElement.getText();
+				System.out.println("go code: " + goElementTextString + " is defined as: " + goDefinitionElementTextString);
+				(currentProtein.getAnnotations()).put(goElementTextString, goDefinitionElementTextString);
+				if(cellLocationGOCodes.contains(goElementTextString) && !currentProtein.isPlacedByGOTerms()){
+					currentProtein.setPlacedByGOTerms(true);
+					currentProtein.setExpressionPointGOText(goElementTextString);
+				}//if(cellLocationGOCodes.contains(goElementTextString)
+			}//while(allRowElementsLiter.hasNext())	
+		}//else if TypeOfGoLookup
+		else{
+			System.err.println("invalid GO code: " + TypeOfGoLookup);
+		}//else
+		driver.quit();
+	}//processGoAnchor
+	
+}//class
