@@ -51,14 +51,15 @@ public class LocationLoader {
 				String goAnnotationName = terms[termCount].substring(nameBeginPoint,nameEndPoint);
 				goAnnotationName = goAnnotationName.trim();
 				System.out.println("Loading Cell Locations...goAnnotationNumber: " + goAnnotationNumber + " is: " + goAnnotationName);
-				
-				if(goAnnotationName.compareToIgnoreCase("cell") != 0 &&  goAnnotationName.compareToIgnoreCase("host") != 0
-						&&  goAnnotationName.compareToIgnoreCase("membrane") != 0){
-					GoAnnotationLocations.put(goAnnotationNumber, goAnnotationName);
-				}//if not cell
+				GoAnnotationLocations.put(goAnnotationNumber, goAnnotationName);
 			}//if a cellular component
 		}//for entryCount
-		
+		//trim out bad values (turn up in text in context where they do not indicate expression location)
+		GoAnnotationLocations.values().remove("cell");
+		GoAnnotationLocations.values().remove("host");
+		GoAnnotationLocations.values().remove("membrane");
+		GoAnnotationLocations.values().remove("axon");
+		GoAnnotationLocations.values().remove("chromosome");
 		return GoAnnotationLocations;
 	}//loadLocations
 }
