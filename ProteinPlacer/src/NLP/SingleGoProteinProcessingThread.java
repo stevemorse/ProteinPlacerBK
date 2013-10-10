@@ -199,39 +199,12 @@ public class SingleGoProteinProcessingThread extends Thread{
 			List<String> cellLocationNames = new ArrayList<String>(GoAnnotationLocations.values());
 			ListIterator<String> cellLocationNamesLiter = cellLocationNames.listIterator();
 			while(cellLocationNamesLiter.hasNext()  && !matched){
-				boolean falseMatch = false;
 				String cellLocationName = cellLocationNamesLiter.next();
 				String seperateName = " " + cellLocationName.toLowerCase() + " ";
 				if((featureText.toLowerCase()).contains((seperateName.toLowerCase()))){
-					//check for exact match on String "axon"
-					if(cellLocationName.toLowerCase().compareTo("axon") == 0){
-						int numAxon = (featureText.toLowerCase()).split("axon").length;
-						int numTaxon = (featureText.toLowerCase()).split("taxon").length;
-						if(numAxon == numTaxon){
-							falseMatch = true;
-						}//if axons == taxons
-					}//if location is "axon"
-					if(cellLocationName.toLowerCase().compareTo("organelle") == 0){
-						int numOrganelle = (featureText.toLowerCase()).split("organelle").length;
-						int numOrganelleFalse = (featureText.toLowerCase()).split("/organelle=").length;
-						if(numOrganelle == numOrganelleFalse){
-							falseMatch = true;
-						}//if assignment of organelles
-					}//if location is "organelles"
-					if(cellLocationName.toLowerCase().compareTo("chromosome") == 0){
-						int numOrganelle = (featureText.toLowerCase()).split("chromosome").length;
-						int numOrganelleFalse = (featureText.toLowerCase()).split("/chromosome=").length;
-						int numOrganelleFalse2 = (featureText.toLowerCase()).split("/note=\"contig chromosome").length;
-						if(numOrganelle == numOrganelleFalse || numOrganelle == numOrganelleFalse2){
-							falseMatch = true;
-						}//if assignment of chromosome
-					}//if location is "chromosome"
-					
-					if(!falseMatch){
-						foundRegion = cellLocationName;
-						matched = true;
-						System.out.println("MATCH FOUND IN FEATURES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!:");
-					}
+					foundRegion = cellLocationName;
+					matched = true;
+					System.out.println("MATCH FOUND IN FEATURES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!:");
 				}//if term in feature
 			}//while termsLiter
 		}//while featureElementsLiter

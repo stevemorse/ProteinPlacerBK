@@ -54,12 +54,15 @@ public class LocationLoader {
 				GoAnnotationLocations.put(goAnnotationNumber, goAnnotationName);
 			}//if a cellular component
 		}//for entryCount
+		System.out.println("loaded " + GoAnnotationLocations.size() +" locations");
 		//trim out bad values (turn up in text in context where they do not indicate expression location)
 		GoAnnotationLocations.values().remove("cell");
 		GoAnnotationLocations.values().remove("host");
 		GoAnnotationLocations.values().remove("membrane");
 		GoAnnotationLocations.values().remove("axon");
 		GoAnnotationLocations.values().remove("chromosome");
+		GoAnnotationLocations.values().remove("organelle");
+		System.out.println("after trim " + GoAnnotationLocations.size() +" locations");
 		return GoAnnotationLocations;
 	}//loadLocations
 }
