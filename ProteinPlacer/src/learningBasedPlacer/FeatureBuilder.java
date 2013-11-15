@@ -26,8 +26,9 @@ import protein.Protein;
 public class FeatureBuilder {
 	
 	private boolean functionalIncluded = false;
+	private boolean debug = true;
 	
-	private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults.bin");
+	private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/goldResults.bin");
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/svmFeatures.txt");
 	private List<Float> featureValuesForOneEntry = new ArrayList<Float>();
 	private Map<String, Integer> valueIndicesMap = new HashMap<String, Integer>();
@@ -109,14 +110,16 @@ public class FeatureBuilder {
 
 		//load values map
 		loadValueIndicesMap(valueIndicesMap);
+		System.out.println(valueIndicesMap.size());
 		
 		if(functionalIncluded){
 			allFunctionalGOAnnotations = loadAllFunctionalGOAnnotations();
 		}
 		
-		//process proteins into a svm instances
+		//process proteins into a svm instances\
+		boolean done = false;
 		ListIterator<Protein> proteinListIter = proteinList.listIterator();
-		while(proteinListIter.hasNext()){
+		while(proteinListIter.hasNext() && !done){
 			featureValuesForOneEntry = makeNewValuesForOneFeatureList(valueIndicesMap.size());
 			currentProtein = proteinListIter.next();
 			String sequence = currentProtein.getProteinSequence();
@@ -125,14 +128,14 @@ public class FeatureBuilder {
 			//fill in all single amino and di-amino features
 			for(int count = 0; count < lengthOfSequence -1; count++){
 				incrementSingleAminoValue(sequence.charAt(count), lengthOfSequence, valueIndicesMap, featureValuesForOneEntry);
-				String diAmino = sequence.substring(count, count+1);
+				String diAmino = sequence.substring(count, count+2);
 				incrementDiAminoValue(diAmino, lengthOfSequence, valueIndicesMap, featureValuesForOneEntry);
 			}//for count
-			incrementSingleAminoValue(sequence.charAt(lengthOfSequence), lengthOfSequence, valueIndicesMap, featureValuesForOneEntry);
+			incrementSingleAminoValue(sequence.charAt(lengthOfSequence-1), lengthOfSequence, valueIndicesMap, featureValuesForOneEntry);
 			String outLineString = "";
 			outLineString = outLineString + getLocationValue(currentProtein) + " ";
 			for(int arrayCount = 0; arrayCount < featureValuesForOneEntry.size(); arrayCount++){
-				outLineString = outLineString + arrayCount + ":" + featureValuesForOneEntry.get(arrayCount);
+				outLineString = outLineString + arrayCount + ":" + featureValuesForOneEntry.get(arrayCount) + " ";
 			}//for arrayCount
 			if(functionalIncluded){
 				List<Integer> functionalValues = getFunctionalAnnotations(currentProtein, allFunctionalGOAnnotations);
@@ -140,11 +143,13 @@ public class FeatureBuilder {
 						functionalCount < featureValuesForOneEntry.size() + numberOfFunctionaCatagories;
 						functionalCount++){
 					outLineString = outLineString + functionalCount + ":" 
-						+ functionalValues.get(functionalCount - featureValuesForOneEntry.size());
+						+ functionalValues.get(functionalCount - featureValuesForOneEntry.size()) + " ";
 				}//for
 			}//if functionalIncluded
 			writer.println(outLineString);
+			System.out.println(outLineString);
 			writer.flush();
+			done = true;
 		}//while proteinListIter
 		writer.close();
 	}//build
@@ -207,9 +212,10 @@ public class FeatureBuilder {
 	public void incrementSingleAminoValue(Character c, int lengthOfSequence, Map<String, Integer> valueIndicesMap, List<Float> featureValuesForOneEntry){
 		char[] oneChar = new char[1];
 		oneChar[0] = c;
-		int valueListIndex = valueIndicesMap.get(new String(oneChar));
+		String charStr = new String(oneChar);
+		int valueListIndex = valueIndicesMap.get(charStr);
 		float currentValue = featureValuesForOneEntry.get(valueListIndex);
-		float newValue = currentValue + (1/lengthOfSequence);
+		float newValue = currentValue + (1/(float)lengthOfSequence);
 		featureValuesForOneEntry.set(valueListIndex, newValue);	
 	}//incrementSingleAminoValue
 	/**
@@ -223,8 +229,9 @@ public class FeatureBuilder {
 	public void incrementDiAminoValue(String diAmino, int lengthOfSequence, Map<String, Integer> valueIndicesMap, List<Float> featureValuesForOneEntry){
 		int valueListIndex = valueIndicesMap.get(diAmino);
 		float currentValue = featureValuesForOneEntry.get(valueListIndex);
-		float newValue = currentValue + (1/lengthOfSequence-1);
+		float newValue = currentValue + (1/(float)(lengthOfSequence-1));
 		featureValuesForOneEntry.set(valueListIndex, newValue);
+		System.out.println("diamino: " + diAmino + " valueListIndex: " + valueListIndex + " + currentValue: " + currentValue +  " newValue: " + newValue);
 	}
 	
 	/**
@@ -240,14 +247,14 @@ public class FeatureBuilder {
 			valueIndicesMap.put(new String(oneChar), new Integer(count));
 		}//for single amino
 		
-		for(int count = 20; count < 420; count++){
+		for(int count = 0; count < 20; count++){
 			char first = chars[count];
 			for(int count2 = 0; count2 < 20; count2++){
 				char second = chars[count2];
 				char[] both = new char[2];
 				both[0] = first;
 				both[1] = second;
-				valueIndicesMap.put(new String(both), new Integer(count));
+				valueIndicesMap.put(new String(both), new Integer(count * 20 + count2 + 20));
 			}//for count2
 		}//for count
 	}//loadValueIndicesMap
