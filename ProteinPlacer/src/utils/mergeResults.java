@@ -23,7 +23,7 @@ import protein.Protein;
  * @version 1.0
  */
 public class mergeResults {
-	private static int numFiles = 75;
+	private static int numFiles = 3;
 	private static String proteinsInFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults.bin");
 	private static File goldOutFile = new File("/home/steve/Desktop/ProteinPlacer/data/goldResults.bin");
@@ -39,7 +39,7 @@ public class mergeResults {
 		Protein currentProtein = null;
 		
 		for(int fileCount = 0; fileCount < numFiles; fileCount++){
-			String currentInFile = proteinsInFileBaseString + fileCount + "\\proteinsOut_" + fileCount +".bin";
+			String currentInFile = proteinsInFileBaseString + fileCount + "/proteinsOut_" + fileCount +".bin";
 			
 			//load proteins from current file
 			InputStream file = null;

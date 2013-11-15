@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import NLP.AllFunctionalGoAnnotationsLoader;
 import NLP.AllValidLocationsLoader;
-
 import protein.Protein;
 /**
  * Converts binary output serialized processed protein files into libsvm input files.
@@ -25,10 +25,13 @@ import protein.Protein;
  */
 public class FeatureBuilder {
 	
+	private boolean functionalIncluded = false;
+	
 	private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults.bin");
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/svmFeatures.txt");
 	private List<Float> featureValuesForOneEntry = new ArrayList<Float>();
 	private Map<String, Integer> valueIndicesMap = new HashMap<String, Integer>();
+	private List<Map<String,String>> allFunctionalGOAnnotations = new ArrayList<Map<String,String>>();
 	
 	public static final int CHLOROPLAST = 1;
 	public static final int ENDOPLASMIC_RETICULUM = 2;
@@ -38,7 +41,25 @@ public class FeatureBuilder {
 	public static final int SECRETORY_PATHWAY = 6;
 	public static final int OTHER = 7;
 	
+	public static final int carbohydrateBinding = 0;
+	public static final int catalyticActivity = 1;
+	public static final int chromatinBinding = 2;
+	public static final int dnaBinding = 3;
+	public static final int enzymeRegulatorActivity = 4;
+	public static final int lipidBinding = 5;
+	public static final int nucleotideBinding = 6;
+	public static final int oxygenBinding = 7;
+	public static final int proteinBinding = 8;
+	public static final int receptorActivity = 9;
+	public static final int rnaBinding = 10;
+	public static final int signalTransducerActivity = 11;
+	public static final int ssDnaBindingTFActivity = 12;
+	public static final int structuralMoleculeActivity = 13;
+	public static final int translationRegulatorActivity = 14;
+	public static final int transporterActivity = 15;
+	
 	private int lengthOfSequence = 0;
+	private int numberOfFunctionaCatagories = 16;
 	
 	/**
 	 * Method that does the controls the conversion of protein output files into libsvm
@@ -86,6 +107,13 @@ public class FeatureBuilder {
 			e.printStackTrace();
 		}
 
+		//load values map
+		loadValueIndicesMap(valueIndicesMap);
+		
+		if(functionalIncluded){
+			allFunctionalGOAnnotations = loadAllFunctionalGOAnnotations();
+		}
+		
 		//process proteins into a svm instances
 		ListIterator<Protein> proteinListIter = proteinList.listIterator();
 		while(proteinListIter.hasNext()){
@@ -106,6 +134,15 @@ public class FeatureBuilder {
 			for(int arrayCount = 0; arrayCount < featureValuesForOneEntry.size(); arrayCount++){
 				outLineString = outLineString + arrayCount + ":" + featureValuesForOneEntry.get(arrayCount);
 			}//for arrayCount
+			if(functionalIncluded){
+				List<Integer> functionalValues = getFunctionalAnnotations(currentProtein, allFunctionalGOAnnotations);
+				for(int functionalCount = featureValuesForOneEntry.size(); 
+						functionalCount < featureValuesForOneEntry.size() + numberOfFunctionaCatagories;
+						functionalCount++){
+					outLineString = outLineString + functionalCount + ":" 
+						+ functionalValues.get(functionalCount - featureValuesForOneEntry.size());
+				}//for
+			}//if functionalIncluded
 			writer.println(outLineString);
 			writer.flush();
 		}//while proteinListIter
@@ -227,6 +264,108 @@ public class FeatureBuilder {
 		}//for		
 		return valuesForOneFeature;
 	}//makeNewvaluesForOneFeatureList
+	
+	public List<Map<String,String>> loadAllFunctionalGOAnnotations(){
+		List<Map<String,String>> allFunctionalGpLocatains = new ArrayList<Map<String,String>>();
+		AllFunctionalGoAnnotationsLoader afgal = new AllFunctionalGoAnnotationsLoader();
+		allFunctionalGpLocatains = afgal.loadAll();
+		return allFunctionalGpLocatains;	
+	}//loadAllFunctionalGOAnnotations
+	
+	public List<Integer> getFunctionalAnnotations(Protein currentProtein, List<Map<String,String>> allFunctionalGOAnnotations){
+		List<Integer> functionals = new ArrayList<Integer>();
+		for(int functionalsCount = 0; functionalsCount < numberOfFunctionaCatagories; functionalsCount++){
+			functionals.add(0);
+		}
+		List<String> currentGoAnnotations = new ArrayList<String>(currentProtein.getAnnotations().values());
+		ListIterator<String> currentGoAnnotationsLiter = currentGoAnnotations.listIterator();
+		while(currentGoAnnotationsLiter.hasNext()){
+			String currentValue = currentGoAnnotationsLiter.next();
+			//check if functional annotation in any of our valid sets of interest
+			Integer idx  = null;
+			if(allFunctionalGOAnnotations.get(carbohydrateBinding).containsValue(currentValue)){
+				idx = functionals.get(carbohydrateBinding);
+				idx++;
+				functionals.set(carbohydrateBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(catalyticActivity).containsValue(currentValue)){
+				idx = functionals.get(catalyticActivity);
+				idx++;
+				functionals.set(catalyticActivity, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(chromatinBinding).containsValue(currentValue)){
+				idx = functionals.get(chromatinBinding);
+				idx++;
+				functionals.set(chromatinBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(dnaBinding).containsValue(currentValue)){
+				idx = functionals.get(dnaBinding);
+				idx++;
+				functionals.set(dnaBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(enzymeRegulatorActivity).containsValue(currentValue)){
+				idx = functionals.get(enzymeRegulatorActivity);
+				idx++;
+				functionals.set(enzymeRegulatorActivity, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(lipidBinding).containsValue(currentValue)){
+				idx = functionals.get(lipidBinding);
+				idx++;
+				functionals.set(lipidBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(nucleotideBinding).containsValue(currentValue)){
+				idx = functionals.get(nucleotideBinding);
+				idx++;
+				functionals.set(nucleotideBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(oxygenBinding).containsValue(currentValue)){
+				idx = functionals.get(oxygenBinding);
+				idx++;
+				functionals.set(oxygenBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(proteinBinding).containsValue(currentValue)){
+				idx = functionals.get(proteinBinding);
+				idx++;
+				functionals.set(proteinBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(receptorActivity).containsValue(currentValue)){
+				idx = functionals.get(receptorActivity);
+				idx++;
+				functionals.set(receptorActivity, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(rnaBinding).containsValue(currentValue)){
+				idx = functionals.get(rnaBinding);
+				idx++;
+				functionals.set(rnaBinding, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(signalTransducerActivity).containsValue(currentValue)){
+				idx = functionals.get(signalTransducerActivity);
+				idx++;
+				functionals.set(signalTransducerActivity, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(ssDnaBindingTFActivity).containsValue(currentValue)){
+				idx = functionals.get(ssDnaBindingTFActivity);
+				idx++;
+				functionals.set(ssDnaBindingTFActivity, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(structuralMoleculeActivity).containsValue(currentValue)){
+				idx = functionals.get(structuralMoleculeActivity);
+				idx++;
+				functionals.set(structuralMoleculeActivity, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(translationRegulatorActivity).containsValue(currentValue)){
+				idx = functionals.get(translationRegulatorActivity);
+				idx++;
+				functionals.set(translationRegulatorActivity, idx);			
+			}
+			if(allFunctionalGOAnnotations.get(transporterActivity).containsValue(currentValue)){
+				idx = functionals.get(transporterActivity);
+				idx++;
+				functionals.set(transporterActivity, idx);			
+			}
+		}//while
+		return functionals;	
+	}//getFunctionalAnnotations
 	
 	/*
 	public void makeBiGrams(){

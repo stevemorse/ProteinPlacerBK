@@ -31,8 +31,8 @@ public class Statistics {
 	public static final int PEROXISOME = 5;
 	public static final int SECRETORY_PATHWAY = 6;
 	public static final int OTHER = 7;
-	//private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults");
-	private static File inFile =  new File ("/home/steve/Desktop/ProteinPlacer/data/allRuleBasedResults.bin");
+	private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults.bin");
+	//private static File inFile =  new File ("/home/steve/Desktop/ProteinPlacer/data/allRuleBasedResults.bin");
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/stats.txt");
 	//private static File ontologyFile = new File("/home/steve/Desktop/ProteinPlacer/cellular_components.obo");
 	
