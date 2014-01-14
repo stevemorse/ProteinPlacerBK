@@ -11,9 +11,12 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
+import NLP.FunctionalGoLoader;
 import protein.Protein;
 
 /**
@@ -23,10 +26,13 @@ import protein.Protein;
  * @version 1.0
  */
 public class mergeResults {
+	private static boolean debug = true;
 	private static int numFiles = 3;
 	private static String proteinsInFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
+	private static File molecularFunction = new File("/home/steve/Desktop/ProteinPlacer/molecular_function.obo");
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults.bin");
 	private static File goldOutFile = new File("/home/steve/Desktop/ProteinPlacer/data/goldResults.bin");
+	private static File goldFunctionalOutFile = new File("/home/steve/Desktop/ProteinPlacer/data/goldFunctionalResults.bin");
 
 	/**
 	 * main method does the merging, outputs the data in two files,
@@ -75,11 +81,15 @@ public class mergeResults {
 		ObjectOutputStream oos = null;
 		FileOutputStream goldFOut = null;
 		ObjectOutputStream goos = null;
+		FileOutputStream goldFFOut = null;
+		ObjectOutputStream gfoos = null;
 		try {
 			fout = new FileOutputStream(outFile);
 			goldFOut = new FileOutputStream(goldOutFile);
+			goldFFOut = new FileOutputStream(goldFunctionalOutFile);
 			oos = new ObjectOutputStream(fout);
 			goos = new ObjectOutputStream(goldFOut);
+			gfoos = new ObjectOutputStream(goldFFOut);
 		} catch (FileNotFoundException fnfe) {
 			System.err.println("error opening output file: " + fnfe.getMessage());
 			fnfe.printStackTrace();
@@ -88,6 +98,11 @@ public class mergeResults {
 			ioe.printStackTrace();
 		}
 		
+		//load functional annotations
+		FunctionalGoLoader ffgl = new FunctionalGoLoader();
+		Map<String, String> GoAnnotationFunctions = ffgl.loadMolecularFunctions(molecularFunction, debug);
+		List<String> GoAnnotationFunctionsCodes = (List<String> ) GoAnnotationFunctions.values();
+		
 		ListIterator<Protein> proteinWriteLiter = proteinList.listIterator();
 		while(proteinWriteLiter.hasNext()){
 			Protein currentWriteProtein = proteinWriteLiter.next();
@@ -95,9 +110,20 @@ public class mergeResults {
 				oos.writeObject(currentWriteProtein);
 				if(currentWriteProtein.isPlacedByText() || currentWriteProtein.isPlacedByGOTerms()){
 					goos.writeObject(currentWriteProtein);
+					//go through current proteins annotations to see if any are functional
+					List<String> currentGoCodesList = (List<String>) currentWriteProtein.getAnnotations().values();
+					ListIterator<String> currentGoCodesLiter = currentGoCodesList.listIterator();
+					boolean done = false;
+					while(currentGoCodesLiter.hasNext() && !done){
+						String goCode = currentGoCodesLiter.next();
+						if(GoAnnotationFunctionsCodes.contains(goCode)){
+							gfoos.writeObject(currentWriteProtein);
+							done = true;
+						}//if placed and has functional annotation(and therefore part of gold functional standard)
+					}//while
 				}//if placed (and therefore part of gold standard)
 			} catch (IOException e) {
-				System.out.println("error writein to file: " + e.getMessage());
+				System.out.println("error writing to file: " + e.getMessage());
 				e.printStackTrace();
 			}
 		}//while
