@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Ant-Version: Apache Ant 1.8.2
-Created-By: 1.6.0_31-b05 (Sun Microsystems Inc.)
+Created-By: 1.7.0_45-b18 (Oracle Corporation)
 
 Name: Build-Info
-Selenium-Version: 2.33.0
-Selenium-Revision: 4e90c97
-Selenium-Build-Time: 2013-05-22 15:33:32
+Selenium-Version: 2.41.0
+Selenium-Revision: 3192d8a
+Selenium-Build-Time: 2014-03-27 17:18:15
 

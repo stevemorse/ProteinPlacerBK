@@ -27,10 +27,10 @@ import utils.SingleLock;
  *
  */
 public class Blast2GoWebInteragator{
-	private static int InputFileNumber = 9;
+	private static int InputFileNumber = 0;
 	private static double thresholdEValue = 1.0E-30;
 	private static String inSequencesFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Fasta";
-	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/outSource.txt");
+	private static String outFileFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private static File inLocationsOBOFile = new File ("/home/steve/Desktop/ProteinPlacer/cellular_components.obo");
 	private static String proteinsOutFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private static String proteinDataInFileString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
@@ -39,6 +39,7 @@ public class Blast2GoWebInteragator{
 	private int processOneProteinThreads = 0;
 	private File inSequencesFile = null;
 	private File proteinsOutFile = null;
+	private File outFile = null;
 	//private File proteinDataInFile = null;
 	
 	/**
@@ -60,6 +61,7 @@ public class Blast2GoWebInteragator{
 		
 		inSequencesFile = new File (inSequencesFileBaseString + InputFileNumber + ".txt");
 		proteinsOutFile = new File(proteinsOutFileBaseString + InputFileNumber + "/proteinsOut_" + InputFileNumber + ".bin");
+		outFile = new File(outFileFileBaseString + InputFileNumber + "/outSource_" + InputFileNumber + ".txt");
 		File blastDataInFile = new File(proteinDataInFileString + InputFileNumber + "/blastResult_" + InputFileNumber + ".xml");
 		File blastAnnotationsInFile = new File(proteinDataInFileString + InputFileNumber + "/annot_Seqs_" + InputFileNumber + ".txt");
 		

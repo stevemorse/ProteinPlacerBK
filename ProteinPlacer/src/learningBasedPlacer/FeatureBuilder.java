@@ -26,6 +26,7 @@ import protein.Protein;
 public class FeatureBuilder {
 	
 	private boolean functionalIncluded = false;
+	private boolean physicalIncluded = false;
 	private boolean debug = true;
 	
 	private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/goldResults.bin");
@@ -61,6 +62,7 @@ public class FeatureBuilder {
 	
 	private int lengthOfSequence = 0;
 	private int numberOfFunctionaCatagories = 16;
+	private int numberPhysicalCatagories = 0;
 	
 	/**
 	 * Method that does the controls the conversion of protein output files into libsvm
@@ -146,6 +148,19 @@ public class FeatureBuilder {
 						+ functionalValues.get(functionalCount - featureValuesForOneEntry.size()) + " ";
 				}//for
 			}//if functionalIncluded
+			if(physicalIncluded){
+				int functionalCatagories = 0;
+				if(functionalIncluded){
+					functionalCatagories = numberOfFunctionaCatagories;
+				}
+				List<Double> physicalValues = getPhysicalPropertyAnnotations(currentProtein);
+				for(int physicalCount = featureValuesForOneEntry.size(); 
+						physicalCount < featureValuesForOneEntry.size() + numberPhysicalCatagories + functionalCatagories;
+						physicalCount++){
+					outLineString = outLineString + physicalCount + ":" 
+						+ physicalValues.get(physicalCount - featureValuesForOneEntry.size()) + " ";
+				}//for
+			}
 			writer.println(outLineString);
 			System.out.println(outLineString);
 			writer.flush();
@@ -373,6 +388,46 @@ public class FeatureBuilder {
 		}//while
 		return functionals;	
 	}//getFunctionalAnnotations
+	
+	public List<Double> getPhysicalPropertyAnnotations(Protein currentProtein){
+		List<Double> physicalProperties = new ArrayList<Double>();
+		
+		for(int physicalsCount = 0; physicalsCount < numberPhysicalCatagories; physicalsCount++){
+			physicalProperties.add((double) 0);
+		}
+		
+		//split protein into N-terminal, middle and C-terminal sections
+		String proteinSequence = currentProtein.getProteinSequence();
+		int sequencelength = proteinSequence.length();
+		double CtermEnd = Math.floor(sequencelength/3.0);
+		double TtermBegin = Math.ceil(sequencelength/3.0 * 2);
+		
+		for(int aminoAcidCount = 0; aminoAcidCount < sequencelength; aminoAcidCount++){
+			if(proteinSequence.charAt(aminoAcidCount) == 'A' | proteinSequence.charAt(aminoAcidCount) == 'I' |
+					proteinSequence.charAt(aminoAcidCount) == 'L' | proteinSequence.charAt(aminoAcidCount) == 'V'){
+				if(aminoAcidCount < CtermEnd){
+					double value = physicalProperties.get(0);
+					value += 1/CtermEnd;
+					physicalProperties.set(0, value);
+				}//if in first third
+				else if(aminoAcidCount < TtermBegin){
+					double value = physicalProperties.get(1);
+					value += 1/CtermEnd;
+					physicalProperties.set(1, value);
+				}//if in second third
+				else{
+					double value = physicalProperties.get(2);
+					value += 1/CtermEnd;
+					physicalProperties.set(2, value);
+				}//if in last third
+			}//if hydrophobic
+			
+			
+		}//for aminoAcidCount
+		
+		
+		return physicalProperties;	
+	}
 	
 	/*
 	public void makeBiGrams(){

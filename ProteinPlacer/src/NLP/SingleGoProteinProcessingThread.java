@@ -190,12 +190,28 @@ public class SingleGoProteinProcessingThread extends Thread{
 			}
 		}//while not gotFeatures
 		
+		
+		ListIterator<WebElement> featureElementsLiterTest = featureElements.listIterator();
+		List<String>sourceOrProteinFeaturesListText = new ArrayList<String>();
+		while(featureElementsLiterTest.hasNext()){
+			WebElement feature = featureElementsLiterTest.next();
+			System.out.println("FEATURE IS NAMED: " + feature.getTagName());
+			String featureIDString = feature.getAttribute("id").toString();
+			System.out.println("FEATURE HAS ID: " + featureIDString);
+			if(featureIDString.contains("Protein")||featureIDString.contains("protein")
+					||featureIDString.contains("Source")||featureIDString.contains("source")){
+				System.out.println("FEATURE TEXT IS: " + feature.getText());
+				sourceOrProteinFeaturesListText.add(feature.getText());
+			}//if contains right id
+		}
+		
 		boolean matched = false;
 		System.out.println("number of features = " + featureElements.size());
-		ListIterator<WebElement> featureElementsLiter = featureElements.listIterator();
-		while(featureElementsLiter.hasNext() && !matched){
-			WebElement feature = featureElementsLiter.next();
-			String featureText = feature.getText();
+		System.out.println("number of source and protein features = " + sourceOrProteinFeaturesListText.size());
+		ListIterator<String> sourceOrProteinFeatureTextLiter = sourceOrProteinFeaturesListText.listIterator();
+		while(sourceOrProteinFeatureTextLiter.hasNext() && !matched){
+			String featureText = sourceOrProteinFeatureTextLiter.next();
+			//String featureText = feature.getText();
 			List<String> cellLocationNames = new ArrayList<String>(GoAnnotationLocations.values());
 			ListIterator<String> cellLocationNamesLiter = cellLocationNames.listIterator();
 			while(cellLocationNamesLiter.hasNext()  && !matched){
@@ -233,16 +249,26 @@ public class SingleGoProteinProcessingThread extends Thread{
 		if(debug){
 			PrintWriter	writer = null;
 			try {
-				writer = new PrintWriter(new FileWriter(outFile));
+				writer = new PrintWriter(new FileWriter(outFile,true));
 			} catch (IOException e) {
 				System.out.println("IOException: " + e.getMessage());
 				e.printStackTrace();
 			}
+			/*
 			writer.println("putative source text..............................................................\n");
 			writer.println(source);
 			writer.flush();
 			writer.println("putative genbank text..............................................................\n");
 			writer.println(genbankText);
+			*/
+			ListIterator<String> sourceOrProteinFeatureTextLiterForWrite = sourceOrProteinFeaturesListText.listIterator();
+			writer.println("protein: " + currentProtien.toString());
+			writer.println("source and protien feature texts");
+			while(sourceOrProteinFeatureTextLiterForWrite.hasNext()){
+				String featureText = sourceOrProteinFeatureTextLiterForWrite.next();
+				writer.println(featureText);
+			}//while featureElementsLiter
+			writer.println();
 			writer.flush();
 			writer.close();
 		}//if debug

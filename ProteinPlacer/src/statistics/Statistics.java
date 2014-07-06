@@ -3,6 +3,8 @@ package statistics;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,8 +16,8 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import NLP.AllValidLocationsLoader;
-
 import protein.Protein;
+import utils.SourceSpliter;
 
 /**
  * calculates the statistics for a protein file that allow us to see how well
@@ -35,6 +37,7 @@ public class Statistics {
 	//private static File inFile =  new File ("/home/steve/Desktop/ProteinPlacer/data/allRuleBasedResults.bin");
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/stats.txt");
 	//private static File ontologyFile = new File("/home/steve/Desktop/ProteinPlacer/cellular_components.obo");
+	private static File sourceTextInFile = new File("/home/steve/Desktop/ProteinPlacer/data/allSourceText.bin");
 	
 	/**
 	 * main method, calculates the statistics and makes output
@@ -84,6 +87,25 @@ public class Statistics {
 		}
 		
 		System.out.println("number of proteins loaded is: " + proteinList.size());
+		
+		//load source text
+		char[] sourceInFileBuffer = new char[(int) sourceTextInFile.length()];
+		
+		//read source data from current file
+		try {
+			FileReader sourceFileReader = new FileReader(sourceTextInFile);
+			sourceFileReader.read(sourceInFileBuffer);
+			sourceFileReader.close();
+		} catch (FileNotFoundException e) {
+			System.out.println("File Not Found: " + e.getMessage());
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("IOException: " + e.getMessage());
+			e.printStackTrace();
+		}
+		String sourcesStr = new String(sourceInFileBuffer);
+		//split and process source data
+		List<List<String>> proteinDataList = SourceSpliter.split(sourcesStr);
 		
 		FileWriter fw = null;
 		try {
@@ -153,13 +175,17 @@ public class Statistics {
 				}//if match found in either
 				else{
 					falsePositive++;
+					//make output for false positive to file
 					System.out.println(currentProtein);
+					makeFalsePositiveOutput(fw,proteinDataList,currentProtein);
+					/*
 					try{
 						fw.write(currentProtein.toString());
 					} catch (IOException e) {
 						System.out.println("error writein to file: " + e.getMessage());
 						e.printStackTrace();
 					}
+					*/
 				}//match not found in either
 			}//if placed by the two systems
 			
@@ -229,5 +255,27 @@ public class Statistics {
 		return false;
 	}//isSubSetOf
 	
+	/**
+	 * 
+	 * @param fw FileWriter to use to write to output file
+	 * @param proteinDataList List<List<String>> of List of protein sequences and synchronous list of source texts
+	 * @param currentProtein the current protein being processed
+	 * @return none
+	 */
+	public static void makeFalsePositiveOutput (FileWriter fw, List<List<String>> proteinDataList, Protein currentProtein){
+		
+		List<String> sequences = proteinDataList.get(0);
+		List<String> sourceTexts = proteinDataList.get(1);
+		int indexOfSource = sequences.indexOf(currentProtein.getSequence());
+		String sourceText = sourceTexts.get(indexOfSource);
+				
+		try{
+			fw.write(currentProtein.toString());
+			fw.write(sourceText);
+		} catch (IOException e) {
+			System.out.println("error writing to file: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}//makeFalsePositiveOutput
 	
 }//class

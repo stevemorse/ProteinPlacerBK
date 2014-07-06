@@ -5,11 +5,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +36,9 @@ public class mergeResults {
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults.bin");
 	private static File goldOutFile = new File("/home/steve/Desktop/ProteinPlacer/data/goldResults.bin");
 	private static File goldFunctionalOutFile = new File("/home/steve/Desktop/ProteinPlacer/data/goldFunctionalResults.bin");
-
+	private static String inFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
+	private static File outSourceTextFile = new File("/home/steve/Desktop/ProteinPlacer/data/allSourceText.bin");
+	
 	/**
 	 * main method does the merging, outputs the data in two files,
 	 * all the results and gold standard results (placed proteins).
@@ -43,6 +48,7 @@ public class mergeResults {
 		
 		List<Protein> proteinList = new ArrayList<Protein>();
 		Protein currentProtein = null;
+		String allSource = "";
 		
 		for(int fileCount = 0; fileCount < numFiles; fileCount++){
 			String currentInFile = proteinsInFileBaseString + fileCount + "/proteinsOut_" + fileCount +".bin";
@@ -74,9 +80,33 @@ public class mergeResults {
 				ioe.printStackTrace();
 			}
 			
-			System.out.println("number of proteins loaded is: " + proteinList.size());			
+			System.out.println("number of proteins loaded is: " + proteinList.size());		
+			
+			//now merge page source location from text files
+			
+			File cuurentInFile = new File(inFileBaseString + fileCount + "/outSource_" + fileCount + ".txt");
+			
+			char[] sourceInFileBuffer = new char[(int) cuurentInFile.length()];
+			
+			//read source data from current file
+			try {
+				FileReader sourceFileReader = new FileReader(cuurentInFile);
+				sourceFileReader.read(sourceInFileBuffer);
+				sourceFileReader.close();
+			} catch (FileNotFoundException e) {
+				System.out.println("File Not Found: " + e.getMessage());
+				e.printStackTrace();
+			} catch (IOException e) {
+				System.out.println("IOException: " + e.getMessage());
+				e.printStackTrace();
+			}
+			
+			String sourcesStr = new String(sourceInFileBuffer);
+			//add to cumulative total
+			allSource = allSource + sourcesStr;	
 		}//for fileCount
 		
+		//output gold standards for rule based and functional processing
 		FileOutputStream fout = null;
 		ObjectOutputStream oos = null;
 		FileOutputStream goldFOut = null;
@@ -138,5 +168,17 @@ public class mergeResults {
 			ioe.printStackTrace();
 		}
 	
+		//output source text files
+		
+		PrintWriter	writer = null;
+		try {
+			writer = new PrintWriter(new FileWriter(outSourceTextFile));
+		} catch (IOException e) {
+			System.out.println("IOException: " + e.getMessage());
+			e.printStackTrace();
+		}
+		writer.println(allSource);
+		writer.flush();
+		writer.close();
 	}//main
 }
