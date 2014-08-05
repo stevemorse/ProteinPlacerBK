@@ -26,7 +26,7 @@ import utils.SingleLock;
  * @version 1.0
  *
  */
-public class Blast2GoWebInteragator{
+public class Blast2GoWebInterrogator{
 	private static int InputFileNumber = 0;
 	private static double thresholdEValue = 1.0E-30;
 	private static String inSequencesFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Fasta";
@@ -48,7 +48,7 @@ public class Blast2GoWebInteragator{
 	 * @param threads	Size of the threadpool	
 	 * @param debug	Verbose flag
 	 */
-	public Blast2GoWebInteragator(List<Protein> proteinList, int threads, boolean debug){
+	public Blast2GoWebInterrogator(List<Protein> proteinList, int threads, boolean debug){
 		this.debug = debug;
 		processOneProteinThreads = threads;
 	}
@@ -57,7 +57,7 @@ public class Blast2GoWebInteragator{
 	 * Manages the threadpool of individual protein processing tasks.  Loops through all Proteins loaded until all processed.
 	 * Calls SingleGoProteinProcessingThread to process each protein.  Loads and processes Go codes and accessions hits.
 	 */
-	public void interogate(){
+	public void interrogate(){
 		
 		inSequencesFile = new File (inSequencesFileBaseString + InputFileNumber + ".txt");
 		proteinsOutFile = new File(proteinsOutFileBaseString + InputFileNumber + "/proteinsOut_" + InputFileNumber + ".bin");

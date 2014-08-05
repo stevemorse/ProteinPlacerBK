@@ -246,21 +246,15 @@ public class SingleGoProteinProcessingThread extends Thread{
 		
 		String genbankText = genbank.getText();
 		
-		if(debug){
-			PrintWriter	writer = null;
-			try {
-				writer = new PrintWriter(new FileWriter(outFile,true));
-			} catch (IOException e) {
-				System.out.println("IOException: " + e.getMessage());
-				e.printStackTrace();
-			}
-			/*
-			writer.println("putative source text..............................................................\n");
-			writer.println(source);
-			writer.flush();
-			writer.println("putative genbank text..............................................................\n");
-			writer.println(genbankText);
-			*/
+		//make output to source text file
+		PrintWriter	writer = null;
+		try {
+			writer = new PrintWriter(new FileWriter(outFile,true));
+		} catch (IOException e) {
+			System.out.println("IOException: " + e.getMessage());
+			e.printStackTrace();
+		}
+		synchronized(outFile){
 			ListIterator<String> sourceOrProteinFeatureTextLiterForWrite = sourceOrProteinFeaturesListText.listIterator();
 			writer.println("protein: " + currentProtien.toString());
 			writer.println("source and protien feature texts");
@@ -271,7 +265,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 			writer.println();
 			writer.flush();
 			writer.close();
-		}//if debug
+		}//synch
 			
 		//check KEYWORDS area of genbank text for location keywords if not found in features
 		if (matched = false){

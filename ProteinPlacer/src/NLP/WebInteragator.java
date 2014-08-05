@@ -105,7 +105,13 @@ public class WebInteragator extends Thread{
 			}while(!currentDone); //retry current protein thread if browser failure occurs in SingleProteinProcessingThread
 			//finished = true; //set for one loop only...test code against first protein only
 		}//while sequenceListLiter
-			
+		try {
+			oos.close();
+		} catch (IOException ioe) {
+			// TODO Auto-generated catch block
+			System.err.println("failure to close oos " + ioe.getMessage());
+			ioe.printStackTrace();
+		}	
 		executor.shutdown();
 	    // Wait until all threads are finish
 	    while (!executor.isTerminated()) {}

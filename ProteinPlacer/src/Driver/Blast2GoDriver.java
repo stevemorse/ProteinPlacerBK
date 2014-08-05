@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import protein.Protein;
-import NLP.Blast2GoWebInteragator;
+import NLP.Blast2GoWebInterrogator;
 
 /**
  * The Driver for the entire program. Calls the Blast2GoWebInteragator.
@@ -23,7 +23,7 @@ public class Blast2GoDriver {
 	public static void main(String[] args){
 		List<Protein> proteinList = new ArrayList<Protein>();	
 		//get and process data for text and GO
-		Blast2GoWebInteragator webInteragator = new Blast2GoWebInteragator(proteinList,THREADPOOL_SIZE,debug);
-		webInteragator.interogate();
+		Blast2GoWebInterrogator webInterrogator = new Blast2GoWebInterrogator(proteinList,THREADPOOL_SIZE,debug);
+		webInterrogator.interrogate();
 	}//main
 }//class
