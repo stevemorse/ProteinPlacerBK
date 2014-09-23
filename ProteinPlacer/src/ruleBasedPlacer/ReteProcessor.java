@@ -72,7 +72,7 @@ public class ReteProcessor {
 		while(proteinListIter.hasNext()){
 			currentProtein = proteinListIter.next();
 			//if matched then define a rete instance of the protein in the rete engine
-			if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
+			if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
 				int currentFactId = 0;
 				try {
 					Value currentFact = engine.definstance("Protein", currentProtein, false);
@@ -203,8 +203,8 @@ public class ReteProcessor {
 	}//processProteins
 	
 	public boolean checkNucleus(Protein currentProtein){
-		if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
-			String seq = currentProtein.getProteinSequence();
+		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+			String seq = currentProtein.getProteinSequences().get(0);
 System.out.println("in checkNucleus seq is: " + seq);
 			int arginineOrLysine = 0;
 			for(int aminoAcidCount = 0; aminoAcidCount < seq.length(); aminoAcidCount++){
@@ -224,8 +224,8 @@ System.out.println("match in checkNucleus");
 	}//method checkNucleus
 	
 	public boolean checkMitochondrion(Protein currentProtein){
-		if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
-			String seq = currentProtein.getProteinSequence();
+		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+			String seq = currentProtein.getProteinSequences().get(0);
 			String first20 = seq.substring(0,19);
 System.out.println("in checkMitochondrion first20 is: " + first20);
 			for(int aminoAcidCount = 0; aminoAcidCount < first20.length() -12; aminoAcidCount++){
@@ -251,8 +251,8 @@ System.out.println("match in checkMitochondrion");
 	}//method checkMitochondrion
 	
 	public boolean checkChloroplastPlant(Protein currentProtein){
-		if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
-			String seq = currentProtein.getProteinSequence();
+		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+			String seq = currentProtein.getProteinSequences().get(0);
 			String first50 = seq.substring(0,49);
 System.out.println("in checkChloroplastPlant first50 is: " + first50);
 			int serineOrThreonine = 0;
@@ -271,8 +271,8 @@ System.out.println("match in checkChloroplastPlant");
 	}//method checkChloroplastPlant
 	
 	public boolean checkChloroplastDinos(Protein currentProtein){
-		if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
-			String seq = currentProtein.getProteinSequence();
+		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+			String seq = currentProtein.getProteinSequences().get(0);
 			String first15 = seq.substring(0,14);
 System.out.println("in checkChloroplastDinos first15 is: " + first15);
 			int hydrophobic = 0;
@@ -298,7 +298,7 @@ System.out.println("in checkChloroplastDinos first15 is: " + first15);
 			if(hydrophobic+semiHydrophobic >= 10 && semiHydrophobic <= 2){
 				String choppedSeq = seq.substring(endOfHydrophopicRegion);
 				Protein fakeProtein = new Protein();
-				fakeProtein.setProteinSequence(choppedSeq);
+				fakeProtein.getProteinSequences().add(choppedSeq);
 				if(checkChloroplastPlant(fakeProtein)){
 System.out.println("match in checkChloroplastDinos");
 					return true;
@@ -309,8 +309,8 @@ System.out.println("match in checkChloroplastDinos");
 	}//method checkChloroplastDinos
 	
 	public boolean checkSecretoryPathway(Protein currentProtein){
-		if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
-			String seq = currentProtein.getProteinSequence();
+		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+			String seq = currentProtein.getProteinSequences().get(0);
 			String first30 = seq.substring(0,29);
 System.out.println("in checkSecretoryPathway first30 is: " + first30);
 			int hydrophobic = 0;
@@ -342,8 +342,8 @@ System.out.println("match in checkSecretoryPathway");
 	}//method checkSecretoryPathway
 	
 	public boolean checkERRetention(Protein currentProtein){
-		if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
-			String seq = currentProtein.getProteinSequence();
+		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+			String seq = currentProtein.getProteinSequences().get(0);
 			String last4 = seq.substring(seq.length()-4,seq.length());
 System.out.println("in checkERRetention last4 is: " + last4);
 			if(last4.compareTo("kdel") == 0){
@@ -355,8 +355,8 @@ System.out.println("match in checkERRetention");
 	}//method checkERRetention
 	
 	public boolean checkPeroxisome(Protein currentProtein){
-		if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") != 0){
-			String seq = currentProtein.getProteinSequence();
+		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+			String seq = currentProtein.getProteinSequences().get(0);
 			String last3 = seq.substring(seq.length()-3,seq.length());
 System.out.println("in checkPeroxisome last3 is: " + last3);
 			//System.out.println(seq);

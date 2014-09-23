@@ -20,7 +20,6 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/libsvm-3.17/java/libsvm.jar"/>
 	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/Jess71p2/lib/jess.jar"/>
-	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/selenium-2.41.0/selenium-java-2.41.0.jar"/>
 	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/selenium-2.42.2/selenium-java-2.42.2.jar" sourcepath="/home/steve/Desktop/ProteinPlacer/selenium-2.42.2/selenium-java-2.42.2.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

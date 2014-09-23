@@ -1,7 +1,10 @@
 package protein;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import sequence.Sequence;
@@ -13,26 +16,29 @@ public class Protein extends Sequence{
 	 */
 	private static final long serialVersionUID = 7940145680316370293L;
 	private Map<String,String> annotations = null;
-	private String proteinSequence = null;
+	private List<String> proteinSequences = null;
 	private String blast2GoFileName = null;
 	private boolean processed;
 	
 	public Protein() {
 		super();
 		setProcessed(false);
-		proteinSequence = "NOT MATCHED";
+		proteinSequences = new ArrayList<String>();
+		proteinSequences.add("NOT MATCHED");
 	}
 
 	public Protein(String sequence) {
 		super(sequence);
 		setProcessed(false);
-		proteinSequence = "NOT MATCHED";
+		proteinSequences = new ArrayList<String>();
+		proteinSequences.add("NOT MATCHED");
 	}
 	
 	public Protein(String sequence, String type) {
 		super(sequence);
 		setProcessed(false);
-		proteinSequence = "NOT MATCHED";
+		proteinSequences = new ArrayList<String>();
+		proteinSequences.add("NOT MATCHED");
 		if(type.compareTo("GO") == 0){
 			annotations = new HashMap<String,String>();
 		}
@@ -41,12 +47,18 @@ public class Protein extends Sequence{
 	public Protein(String sequence, String type, String blast2GoFileName) {
 		super(sequence);
 		setProcessed(false);
-		proteinSequence = "NOT MATCHED";
+		proteinSequences = new ArrayList<String>();
+		proteinSequences.add("NOT MATCHED");
 		if(type.compareTo("GO") == 0){
 			annotations = new HashMap<String,String>();
 		}
 		this.blast2GoFileName = blast2GoFileName;
 	}
+	
+	/*
+	public List<String> getProteinSequence(){
+		return proteinSequences;
+	}*/
 	
 	public Map<String,String> getAnnotations(){
 		return annotations;
@@ -74,10 +86,26 @@ public class Protein extends Sequence{
 		}
 		return annotationStr;
 	}
+	
+	public String listAllProteinSequences(){
+		String proteinSequenceStr = "";
+		int proteinCount = 0;
+		if(proteinSequences != null){
+			ListIterator<String> proteinSequenceLiter= proteinSequences.listIterator();
+			while(proteinSequenceLiter.hasNext()){
+				String currentStr = proteinSequenceLiter.next();
+				proteinSequenceStr += "proteinSequence: " + proteinCount++ + "\t\tis: " + currentStr + "\n";
+			}//while lit
+		}//if not null
+		else{
+			proteinSequenceStr = "null";
+		}
+		return proteinSequenceStr;
+	}
 
 	public String toString(){
 		return "Protien [sequence= " +  sequence
-		+ ", proteinSequence = " + proteinSequence
+		+ ", proteinSequences = " + listAllProteinSequences()
 		+ ", processed = " + processed
 		+ ", isPlacedByText= "
 		+ isPlacedByText + ", isPlacedByExpandedTerms= "
@@ -89,12 +117,12 @@ public class Protein extends Sequence{
 		+ expressionPointMLS + "]\n" + listAllAnnotations();	
 	}
 
-	public String getProteinSequence() {
-		return proteinSequence;
+	public List<String> getProteinSequences() {
+		return proteinSequences;
 	}
 
-	public void setProteinSequence(String proteinsequence) {
-		this.proteinSequence = proteinsequence;
+	public void setProteinSequences(List<String> proteinsequence) {
+		this.proteinSequences = proteinsequence;
 	}
 
 	public boolean isProcessed() {

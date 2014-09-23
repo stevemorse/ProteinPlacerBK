@@ -119,7 +119,7 @@ public class Statistics {
 		while(proteinListIter.hasNext()){
 			currentProtein = proteinListIter.next();
 			//accumulate stats
-			if(currentProtein.getProteinSequence().compareTo("NOT MATCHED") == 0){
+			if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") == 0){
 				matched++;
 			}//if not matched
 			else{

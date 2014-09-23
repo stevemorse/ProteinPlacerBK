@@ -18,13 +18,15 @@ public class ReteUnitTester {
 		np.setPlacedByText(true);
 		np.setExpressionPointText("nucleus");
 		String nps = "xxxxxxrkrkrxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxnp";
-		np.setProteinSequence(nps);
+		np.getProteinSequences().remove(0);
+		np.getProteinSequences().add(nps);
 		Protein npg = new Protein();
 		npg.setBlast2GoFileName("matches nucleus");
 		npg.setPlacedByGOTerms(true);
 		npg.setExpressionPointGOText("nucleus");
 		String npgs = "rkkkkxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxnpg";
-		npg.setProteinSequence(npgs);
+		npg.getProteinSequences().remove(0);
+		npg.getProteinSequences().add(npgs);
 		proteinList.add(np);
 		proteinList.add(npg);
 		
@@ -34,13 +36,15 @@ public class ReteUnitTester {
 		mp.setPlacedByText(true);
 		mp.setExpressionPointText("mitochondrion");
 		String mps = "xxxrxxxkxxrxxxrxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxmp";
-		mp.setProteinSequence(mps);
+		mp.getProteinSequences().remove(0);
+		mp.getProteinSequences().add(mps);
 		Protein mpg = new Protein();
 		mpg.setBlast2GoFileName("matches mitochondrion");
 		mpg.setPlacedByGOTerms(true);
 		mpg.setExpressionPointGOText("mitochondrion");
 		String mpgs = "xxxxxkxxxkxxkxxxkxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxmpg";
-		mpg.setProteinSequence(mpgs);
+		mpg.getProteinSequences().remove(0);
+		mpg.getProteinSequences().add(mpgs);
 		proteinList.add(mp);
 		proteinList.add(mpg);
 		
@@ -50,13 +54,15 @@ public class ReteUnitTester {
 		cpp.setPlacedByText(true);
 		cpp.setExpressionPointText("chloroplast");
 		String cpps = "xxxststststststsxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcpp";
-		cpp.setProteinSequence(cpps);
+		cpp.getProteinSequences().remove(0);
+		cpp.getProteinSequences().add(cpps);
 		Protein cppg = new Protein();
 		cppg.setBlast2GoFileName("matches chloroplast plant");
 		cppg.setPlacedByGOTerms(true);
 		cppg.setExpressionPointGOText("chloroplast");
 		String cppgs = "xxxxxstxstxstxstxstxstxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcppg";
-		cppg.setProteinSequence(cppgs);
+		cppg.getProteinSequences().remove(0);
+		cppg.getProteinSequences().add(cppgs);
 		proteinList.add(cpp);
 		proteinList.add(cppg);
 		
@@ -66,13 +72,15 @@ public class ReteUnitTester {
 		cpd.setPlacedByText(true);
 		cpd.setExpressionPointText("chloroplast");
 		String cpds = "avlavlavlccxxxststststststsxrxxxrxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcpd";
-		cpd.setProteinSequence(cpds);
+		cpd.getProteinSequences().remove(0);
+		cpd.getProteinSequences().add(cpds);
 		Protein cpdg = new Protein();
 		cpdg.setBlast2GoFileName("matches chloroplast dinos");
 		cpdg.setPlacedByGOTerms(true);
 		cpdg.setExpressionPointGOText("chloroplast");
 		String cpdgs = "avlavlavlccxxxstxstxstxstxstxstxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxcpdg";
-		cpdg.setProteinSequence(cpdgs);
+		cpdg.getProteinSequences().remove(0);
+		cpdg.getProteinSequences().add(cpdgs);
 		proteinList.add(cpd);
 		proteinList.add(cpdg);
 		
@@ -82,13 +90,15 @@ public class ReteUnitTester {
 		sp.setPlacedByText(true);
 		sp.setExpressionPointText("secretory pathway");
 		String sps = "spxxxxxxavlavlavlccxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-		sp.setProteinSequence(sps);
+		sp.getProteinSequences().remove(0);
+		sp.getProteinSequences().add(sps);
 		Protein spg = new Protein();
 		spg.setBlast2GoFileName("matches secretory pathway");
 		spg.setPlacedByGOTerms(true);
 		spg.setExpressionPointGOText("secretory pathway");
 		String spgs = "spgxxxxxxxxavlavlavlccxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-		spg.setProteinSequence(spgs);
+		spg.getProteinSequences().remove(0);
+		spg.getProteinSequences().add(spgs);
 		proteinList.add(sp);
 		proteinList.add(spg);
 		
@@ -98,13 +108,15 @@ public class ReteUnitTester {
 		erp.setPlacedByText(true);
 		erp.setExpressionPointText("endoplasmic reticulum");
 		String erps = "erpxxxxxavlavlavlccxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxkdel";
-		erp.setProteinSequence(erps);
+		erp.getProteinSequences().remove(0);
+		erp.getProteinSequences().add(erps);
 		Protein erpg = new Protein();
 		erpg.setBlast2GoFileName("matches er retention");
 		erpg.setPlacedByGOTerms(true);
 		erpg.setExpressionPointGOText("endoplasmic reticulum");
 		String erpgs = "ergpxxxxxxxavlavlavlccxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxkdel";
-		erpg.setProteinSequence(erpgs);
+		erpg.getProteinSequences().remove(0);
+		erpg.getProteinSequences().add(erpgs);
 		proteinList.add(erp);
 		proteinList.add(erpg);
 		
@@ -114,13 +126,15 @@ public class ReteUnitTester {
 		pp.setPlacedByText(true);
 		pp.setExpressionPointText("peroxisome");
 		String pps = "ppxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxskl";
-		pp.setProteinSequence(pps);
+		pp.getProteinSequences().remove(0);
+		pp.getProteinSequences().add(pps);
 		Protein ppg = new Protein();
 		ppg.setBlast2GoFileName("matches peroxisome");
 		ppg.setPlacedByGOTerms(true);
 		ppg.setExpressionPointGOText("peroxisome");
 		String ppgs = "ppgxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxskl";
-		ppg.setProteinSequence(ppgs);
+		ppg.getProteinSequences().remove(0);
+		ppg.getProteinSequences().add(ppgs);
 		proteinList.add(pp);
 		proteinList.add(ppg);
 		
@@ -129,12 +143,14 @@ public class ReteUnitTester {
 		dp.setPlacedByText(true);
 		dp.setExpressionPointText("");
 		String dps = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-		dp.setProteinSequence(dps);
+		dp.getProteinSequences().remove(0);
+		dp.getProteinSequences().add(dps);
 		Protein dpg = new Protein();
 		dpg.setPlacedByGOTerms(true);
 		dpg.setExpressionPointGOText("");
 		String dpgs = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-		dpg.setProteinSequence(dpgs);
+		dpg.getProteinSequences().remove(0);
+		dpg.getProteinSequences().add(dpgs);
 		proteinList.add(dp);
 		proteinList.add(dpg);
 		

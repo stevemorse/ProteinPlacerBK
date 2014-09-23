@@ -124,7 +124,7 @@ public class FeatureBuilder {
 		while(proteinListIter.hasNext() && !done){
 			featureValuesForOneEntry = makeNewValuesForOneFeatureList(valueIndicesMap.size());
 			currentProtein = proteinListIter.next();
-			String sequence = currentProtein.getProteinSequence();
+			String sequence = currentProtein.getProteinSequences().get(0);
 			sequence = sequence.toLowerCase();
 			lengthOfSequence = sequence.length();
 			//fill in all single amino and di-amino features

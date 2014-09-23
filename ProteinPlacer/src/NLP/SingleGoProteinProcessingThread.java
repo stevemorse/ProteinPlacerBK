@@ -286,19 +286,21 @@ public class SingleGoProteinProcessingThread extends Thread{
 		
 		//extract and load protein sequence
 		if(firstDFLink){
-			int originPosition = genbankText.indexOf("ORIGIN") + 6;
-			String originText = genbankText.substring(originPosition);
-			originText = originText.replaceAll("\\d", "");
-			originText = originText.replaceAll("\\s", "");
-			originText = originText.replaceAll("/", "");
-			originText = originText.trim();
-			currentProtein.setProteinSequence(originText);
-			if(debug){
-				System.out.println("\n\n\n\n\n\n\n\n\nputative genbank text..............................................................\n");
-				System.out.println(genbankText);
-				System.out.println("proteinSequence is: " + originText);
-			}//if debug
+			currentProtein.getProteinSequences().remove(0);//remove "NOT MATCHED" constructor string
 		}
+		int originPosition = genbankText.indexOf("ORIGIN") + 6;
+		String originText = genbankText.substring(originPosition);
+		originText = originText.replaceAll("\\d", "");
+		originText = originText.replaceAll("\\s", "");
+		originText = originText.replaceAll("/", "");
+		originText = originText.trim();
+		currentProtein.getProteinSequences().add(originText);
+		if(debug){
+			System.out.println("\n\n\n\n\n\n\n\n\nputative genbank text..............................................................\n");
+			System.out.println(genbankText);
+			System.out.println("proteinSequence is: " + originText);
+		}//if debug
+		
 			
 		//extract all GO and GOA text spans in genbank text
 		List<String> goAssensionTextList = new ArrayList<String>();

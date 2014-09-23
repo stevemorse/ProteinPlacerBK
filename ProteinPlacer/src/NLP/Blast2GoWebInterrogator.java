@@ -27,7 +27,7 @@ import utils.SingleLock;
  *
  */
 public class Blast2GoWebInterrogator{
-	private static int InputFileNumber = 0;
+	private static int InputFileNumber = 2;
 	private static double thresholdEValue = 1.0E-30;
 	private static String inSequencesFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Fasta";
 	private static String outFileFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
