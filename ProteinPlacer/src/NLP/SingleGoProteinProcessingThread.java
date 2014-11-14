@@ -13,7 +13,25 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import mx4j.tools.config.DefaultConfigurationBuilder.Object;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//import org.apache.xpath.operations.String;
+//import org.openqa.jetty.html.List;
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementNotVisibleException;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -21,7 +39,6 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Wait;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import protein.Protein;
 import utils.SingleLock;
@@ -39,12 +56,20 @@ import com.google.common.base.Function;
  */
 public class SingleGoProteinProcessingThread extends Thread{
 	
+	static int threadCount = 0;
+	private int currentThread = 0;
+	public SingleGoProteinProcessingThread(){
+		threadCount++;
+		currentThread = threadCount;
+		System.out.println("currentThread: " + currentThread + " created");
+	}
+	
 	private Protein currentProtein = null;
 	private Map<String, String> GoAnnotationLocations = null;
 	private Map<String, String> currentAccessionIds = null;
 	private File outFile = null;
 	private double thresholdEValue = 0;
-	private boolean debug = true;
+	private static boolean debug = true;
 	//private static File proteinsOutFile = new File("/home/steve/Desktop/ProteinPlacer/proteinsOut.bin");
 	private  ObjectOutputStream oos = null;
 	
@@ -66,7 +91,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 		this.currentAccessionIds = currentAccessionIds;
 		this.outFile = outFile;
 		this.thresholdEValue = thresholdEValue;
-		this.debug = debug;
+		SingleGoProteinProcessingThread.debug = debug;
 		this.oos = oos;
 	}
 	
@@ -124,6 +149,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 				ioe.printStackTrace();
 			}//try block
 		}//synchronized
+		System.out.println("currentThread: " + currentThread + " ends run normally");
 	}//run method
 	
 
@@ -145,7 +171,21 @@ public class SingleGoProteinProcessingThread extends Thread{
 		List<WebElement> featureElements = null;
 		WebElement inputTextFeildElement = null;
 		String proteinPageUrl = "http://www.ncbi.nlm.nih.gov/protein/";
-		final WebDriver driver = new FirefoxDriver();
+		
+		//starting more than firefox driver instance at a time can result in socket lock
+		//also manually force re-init of driver to prevent hanging attachment of old driver
+		//to port until garbage collection.
+		//see http://code.google.com/p/selenium/issues/detail?id=5061
+		//see http://stackoverflow.com/questions/16140865/unable-to-bind-to-locking-port-7054-within-45000-ms
+		final WebDriver driver;
+		//final FirefoxDriverWrapper driver = new FirefoxDriverWrapper();
+		
+		//Object socketLock = new Object();
+		//synchronized(socketLock){
+		driver = new FirefoxDriver();
+			//driver = forceInit();
+			//driver.open();
+		//}//end synch block
 		
 		//get protein page
 		boolean done = true;
@@ -162,6 +202,9 @@ public class SingleGoProteinProcessingThread extends Thread{
 						}});
 			}
 			catch(NoSuchElementException nsee){
+				done = false;
+			}
+			catch(ElementNotVisibleException enve){
 				done = false;
 			}
 		}while(!done);
@@ -239,8 +282,29 @@ public class SingleGoProteinProcessingThread extends Thread{
 			
 			}//try
 			catch(NoSuchElementException nsee){
-				genbank = null;
+				WebElement itemid = null;
+				itemid = null;
 				System.out.println("no genebank elemant returned for accession: " + accession + " " + nsee.getMessage());
+				//check for obsolete link and if found click on it to get obsolete page (with genebank)
+				try{
+					itemid = waitingDriver.until(new Function<WebDriver,WebElement>(){
+						public WebElement apply(WebDriver diver){
+							return driver.findElement(By.className("itemid"));
+							}});
+					//System.out.println("found obsolete link");
+					//System.out.println(itemid.getText());
+					WebElement href = itemid.findElement(By.tagName("a"));
+					//System.out.println(href.getText());
+					href.click();
+					//System.exit(0);
+				
+				}//try 
+				catch(NoSuchElementException nsee2){
+					System.out.println(nsee2.getMessage());
+					//<li class="error icon">
+				    //<span class="icon"></span>
+					//</li>
+				}
 			}//catch
 		}//while not got genebank element
 		
@@ -336,8 +400,10 @@ public class SingleGoProteinProcessingThread extends Thread{
 				processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GOA", debug);		
 			}
 		}//while(goAnchorsLiter.hasNext())
-
+		
+		driver.close();
 		driver.quit();
+		//forceClose(driver);
 		return foundRegion;
 	}//processAnchorLinks
 	
@@ -361,7 +427,20 @@ public class SingleGoProteinProcessingThread extends Thread{
 		String quickGoTextClassName = "info-definition";
 		String quickGoIDTagName = "a";
 		
-		WebDriver driver = new FirefoxDriver();
+		//WebDriver driver = new FirefoxDriver();
+		
+		//starting more than firefox driver instance at a time can result in socket lock
+		//also manually force re-init of driver to prevent hanging attachment of old driver
+		//to port until garbage collection.
+		//see http://code.google.com/p/selenium/issues/detail?id=5061
+		//see http://stackoverflow.com/questions/16140865/unable-to-bind-to-locking-port-7054-within-45000-ms
+		final WebDriver driver;
+		//Object socketLock = new Object();
+		//synchronized(socketLock){
+		driver = new FirefoxDriver();
+			//driver = forceInit();
+			//driver = new FirefoxDriverWrapper();
+		//}//end synch block
 		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
 		driver.get(url);
 		
@@ -404,7 +483,14 @@ public class SingleGoProteinProcessingThread extends Thread{
 		else{
 			System.err.println("invalid GO code: " + TypeOfGoLookup);
 		}//else
+		
+		driver.close();
 		driver.quit();
+		//forceClose(driver);
 	}//processGoAnchor
 	
 }//class
+
+
+
+
