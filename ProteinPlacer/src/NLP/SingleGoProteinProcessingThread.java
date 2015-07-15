@@ -28,6 +28,7 @@ import mx4j.tools.config.DefaultConfigurationBuilder.Object;
 
 
 
+
 //import org.apache.xpath.operations.String;
 //import org.openqa.jetty.html.List;
 import org.openqa.selenium.By;
@@ -99,6 +100,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 	 * Processes all accession links with an eValue less than the threshold eValue.
 	 */
 	public void run() throws org.openqa.selenium.WebDriverException{
+		AnchorLinkThreadGateway.getInstance();
 		if(currentAccessionIds != null){
 			List<String> accessions =  new ArrayList<String>(currentAccessionIds.keySet());
 			ListIterator<String> accessionsLiter = accessions.listIterator();
@@ -113,14 +115,15 @@ public class SingleGoProteinProcessingThread extends Thread{
 					System.out.println("eValueText in decimal: " + eValue);
 				}//if debug
 					if(eValue < thresholdEValue){
-						String region = processAnchorLink(currentProtein,accessionName,GoAnnotationLocations, outFile, firstAccession, debug);
+						StringBuilder region = new StringBuilder("");
+						AnchorLinkThreadGateway.getAnchorLinkThread(currentProtein,accessionName,region,GoAnnotationLocations, outFile, firstAccession, debug);
 						firstAccession = false;
-						if(region != null && region.compareTo("not found") != 0){
+						if(region != null && region.toString().compareTo("not found") != 0){
 							if(debug){
 								System.out.println("found region is: " + region);
 							}//if debug
 							currentProtein.setPlacedByText(true);
-							currentProtein.setExpressionPointText(region);
+							currentProtein.setExpressionPointText(region.toString());
 							//done = true;
 						}
 						else{
@@ -164,7 +167,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 	 * @param firstDFLink extract protein sequence from origin field for first dflink (lowest eValue)
 	 * @return A String naming the expression point if found or "not found" otherwise.
 	 */
-	public String processAnchorLink(Protein currentProtien, String accession, Map<String, String>GoAnnotationLocations, 
+/*	public String processAnchorLink(Protein currentProtien, String accession, Map<String, String>GoAnnotationLocations, 
 			File outFile, boolean firstDFLink, boolean debug) throws org.openqa.selenium.WebDriverException{
 		
 		String foundRegion = "not found";
@@ -406,7 +409,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 		//forceClose(driver);
 		return foundRegion;
 	}//processAnchorLinks
-	
+*/
 	/**
 	 * Processes a link to either an AmiGO or classic GO web page to extract GO 
 	 * annotations, if there are any more, and see if any are GO 
@@ -418,7 +421,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 	 * @param TypeOfGoLookup identifies the link as a classic GO anchor or an AmiGO anchor. 
 	 * @param debug	Verbose flag.
 	 */
-	public void processGoAnchor(Protein currentProtein, String url, String currentGoAnchorString, 
+/*	public void processGoAnchor(Protein currentProtein, String url, String currentGoAnchorString, 
 			Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, boolean debug) throws org.openqa.selenium.WebDriverException{
 		
 		String amiGoTextClassName = "name";
@@ -488,7 +491,7 @@ public class SingleGoProteinProcessingThread extends Thread{
 		driver.quit();
 		//forceClose(driver);
 	}//processGoAnchor
-	
+*/
 }//class
 
 

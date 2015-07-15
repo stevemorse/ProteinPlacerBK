@@ -6,8 +6,9 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/ncbiblast.jar"/>
-	<classpathentry kind="lib" path="lib/jsoup-1.6.1.jar"/>
+	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/selenium-2.46.0/selenium-java-2.46.0.jar"/>
+	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/Jess71p2/lib/jess.jar"/>
+	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/libsvm-3.17/java/libsvm.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
@@ -18,8 +19,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/libsvm-3.17/java/libsvm.jar"/>
-	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/Jess71p2/lib/jess.jar"/>
-	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/selenium-2.44.0/selenium-java-2.44.0.jar"/>
+	<classpathentry kind="lib" path="/home/steve/Desktop/ProteinPlacer/ncbiblast.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
