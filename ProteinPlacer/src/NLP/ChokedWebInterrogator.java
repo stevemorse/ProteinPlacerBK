@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -65,19 +66,20 @@ public class ChokedWebInterrogator{
 		File blastDataInFile = new File(proteinDataInFileString + InputFileNumber + "/blastResult_" + InputFileNumber + ".xml");
 		File blastAnnotationsInFile = new File(proteinDataInFileString + InputFileNumber + "/annot_Seqs_" + InputFileNumber + ".txt");
 		
-		Map<String, String> GoAnnotationLocations = new HashMap<String, String>();
+		Map<String, String> goAnnotationLocations = new HashMap<String, String>();
 		LocationLoader loader = new LocationLoader();
-		GoAnnotationLocations = loader.loadLocations(inLocationsOBOFile, debug);		
+		goAnnotationLocations = loader.loadLocations(inLocationsOBOFile, debug);
+		AnchorLinkThreadGateway theAnchorLinkThreadGateway = AnchorLinkThreadGateway.getInstance();
 
 		//read sequence data from fasta file
 		getSequences(inSequencesFile,proteinList);
 		
 		//SingleProteinProcessingThreads = new SingleProteinProcessingThread[proteinList.size()];
-		ExecutorService executor = Executors.newFixedThreadPool(processOneProteinThreads);
+		//ExecutorService executor = Executors.newFixedThreadPool(processOneProteinThreads);
 		
 		//loop through sequences loading data into blast and search
 		ListIterator<Protein> proteinListLiter = proteinList.listIterator();
-		Protein currentProtein = null;
+		Protein currentProtien = null;
 		
 		//get accession ids
 		Map<String, Map<String, String>> accessionIds = getAccessionIds(blastDataInFile);
@@ -100,24 +102,24 @@ public class ChokedWebInterrogator{
 		boolean currentDone = true;
 		boolean finished = false;
 		while(proteinListLiter.hasNext() && !finished){
-			currentProtein = proteinListLiter.next();
+			currentProtien = proteinListLiter.next();
 			//load Accession ids from file and associate with protein
-			Map<String, String> currentAccessionIds = accessionIds.get(currentProtein.getBlast2GoFileName());
+			Map<String, String> currentAccessionIds = accessionIds.get(currentProtien.getBlast2GoFileName());
 			//trim out annotation under eValue
 			trim(currentAccessionIds, thresholdEValue);
 			//load GO annotations
-			currentProtein.setAnnotations(goAnnotations.get(currentProtein.getBlast2GoFileName()));
+			currentProtien.setAnnotations(goAnnotations.get(currentProtien.getBlast2GoFileName()));
 	
 			//if go annotation include a valid cell location, set it
-			if(currentProtein.getAnnotations() != null){
-				List<String> cellLocationGOCodes = new ArrayList<String>(GoAnnotationLocations.keySet());
-				List<String> currentProteinGoCodes = new ArrayList<String>(currentProtein.getAnnotations().keySet());
+			if(currentProtien.getAnnotations() != null){
+				List<String> cellLocationGOCodes = new ArrayList<String>(goAnnotationLocations.keySet());
+				List<String> currentProteinGoCodes = new ArrayList<String>(currentProtien.getAnnotations().keySet());
 				ListIterator<String> currentProteinGoCodesLiter = currentProteinGoCodes.listIterator();
 				while(currentProteinGoCodesLiter.hasNext()){
 					String currentGoCode = 	currentProteinGoCodesLiter.next();
-					if(cellLocationGOCodes.contains(currentGoCode) && !currentProtein.isPlacedByGOTerms()){
-						currentProtein.setPlacedByGOTerms(true);
-						currentProtein.setExpressionPointGOText(currentProtein.getAnnotations().get(currentGoCode));
+					if(cellLocationGOCodes.contains(currentGoCode) && !currentProtien.isPlacedByGOTerms()){
+						currentProtien.setPlacedByGOTerms(true);
+						currentProtien.setExpressionPointGOText(currentProtien.getAnnotations().get(currentGoCode));
 					}//if(cellLocationGOCodes.contains(currentGoAnchorString)
 				}//while currentProteinGoCodesLiter
 			}//annotation not null
@@ -126,14 +128,28 @@ public class ChokedWebInterrogator{
 			do{
 				try{
 					if(currentAccessionIds != null && currentAccessionIds.size() >0){
-						oneProteinWorkerThread = new ChokedSingleProteinProcessingThread(currentProtein, GoAnnotationLocations, currentAccessionIds,outFile, oos, thresholdEValue, debug);
-						executor.execute(oneProteinWorkerThread);
-					}//if protein needs processing
+						boolean firstAccession = true;
+						Iterator<String> currentAccessionIdsIter = currentAccessionIds.keySet().iterator();
+						while(currentAccessionIdsIter.hasNext()){
+							//oneProteinWorkerThread = new ChokedSingleGoProteinProcessingThread(currentProtein, GoAnnotationLocations, currentAccessionIds,outFile, oos, thresholdEValue, debug);
+							//executor.execute(oneProteinWorkerThread);
+							String accession = currentAccessionIdsIter.next();
+							String eValueStr = currentAccessionIds.get(accession);
+							double eValue = Double.parseDouble(eValueStr);
+							if(eValue < thresholdEValue){
+								//process presumed non-random hit
+								StringBuilder region = new StringBuilder("");
+								theAnchorLinkThreadGateway.getAnchorLinkThread(currentProtien, accession, region, goAnnotationLocations, blastAnnotationsInFile, firstAccession, finished);
+								firstAccession = false;
+								currentProtien.getAllFoundRegionsInText().put(accession,region.toString());
+							}//if eValue of current accession (probability of hit being random) is lower than the threshold probability (eValue)
+						}//while there are accessions for this protein that have not been data mined
+					}//if protein has at least one accession id and therefore needs processing
 					else{
-						currentProtein.setProcessed(true);  //fully processed by this point
+						currentProtien.setProcessed(true);  //fully processed by this point
 						SingleLock lock = SingleLock.getInstance();
 						synchronized(lock){
-							oos.writeObject(currentProtein);
+							oos.writeObject(currentProtien);
 						}
 					}//else no further processing required
 				}
@@ -151,14 +167,14 @@ public class ChokedWebInterrogator{
 					System.err.println("error opening output stream: " + ioe.getMessage());
 					ioe.printStackTrace();
 				}
-			}while(!currentDone); //retry current protein thread if browser failure occurs in SingleProteinProcessingThread
+			}while(!currentDone); //retry current protein thread if browser failure occurs in SingleAnchorThread
 			
 			//finished = true; //set for one loop only...test code against first protein only
 		}//while sequenceListLiter
 			
-		executor.shutdown();
+		//executor.shutdown();
 	    // Wait until all threads are finish
-	    while (!executor.isTerminated()) {}
+	    //while (!executor.isTerminated()) {}
 	    
 	    try {	
 	    	oos.close();

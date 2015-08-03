@@ -25,20 +25,18 @@ import protein.Protein;
 
 import com.google.common.base.Function;
 
+/**
+ * Processes a single http link (accession) corresponding to a putative match returned 
+ * from the Blast search performed on the protein's sequence (if it was of 
+ * lower eValue than threshold).  The run method modifies a StringBuilder parameter as
+ * an effective return value which holds the region the protien is thought to be
+ * expressed according to this accession or "not found" if no region data is mined
+ * for this accession.
+ */
 public class SingleAnchorLinkThread extends Thread{
-	/**
-	 * Processes a single http link corresponding to a putative match returned 
-	 * from the Blast search performed on the protein's sequence.
-	 * @param currentProtien	The protein being processed.
-	 * @param url	The current url link to process for this protein.
-	 * @param GoAnnotationLocations	A Map of all GO cellular components GO values and names.
-	 * @param outFile	Debug text out file.
-	 * @param debug	Verbose flag.
-	 * @param firstDFLink extract protein sequence from origin field for first dflink (lowest eValue)
-	 * @return A String naming the expression point if found or "not found" otherwise.
-	 */
+	
 	//public String processAnchorLink(Protein currentProtien, String accession, Map<String, String>GoAnnotationLocations, 
-	//		File outFile, boolean firstDFLink, boolean debug) throws org.openqa.selenium.WebDriverException{
+	//File outFile, boolean firstDFLink, boolean debug) throws org.openqa.selenium.WebDriverException{
 	
 	private Protein currentProtien = null;
 	private String accession = "";
@@ -59,7 +57,18 @@ public class SingleAnchorLinkThread extends Thread{
 		this.debug = debug;
 	}
 	
-	
+	/**
+	 * Processes a single http link corresponding to a putative match returned 
+	 * from the Blast search performed on the protein's sequence.
+	 * @param currentProtien	The protein being processed.
+	 * @param url	The current url link to process for this protein.
+	 * @param GoAnnotationLocations	A Map of all GO cellular components GO values and names.
+	 * @param outFile	Debug text out file.
+	 * @param debug	Verbose flag.
+	 * @param firstDFLink extract protein sequence from origin field for first dflink (lowest eValue)
+	 * @param A StringBuilder "region" to be set by the thread naming the expression point if found or "not found" otherwise.  
+	 * This is effectively a return value for the thread made a parameter so as to use the default run method pattern.
+	 */
 	public void run() throws org.openqa.selenium.WebDriverException{
 		String foundRegion = "not found";
 		List<WebElement> featureElements = null;

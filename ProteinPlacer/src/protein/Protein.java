@@ -16,6 +16,7 @@ public class Protein extends Sequence{
 	 */
 	private static final long serialVersionUID = 7940145680316370293L;
 	private Map<String,String> annotations = null;
+	private Map<String,String> allFoundRegionsInText = null;
 	private List<String> proteinSequences = null;
 	private String blast2GoFileName = null;
 	private boolean processed;
@@ -25,6 +26,7 @@ public class Protein extends Sequence{
 		setProcessed(false);
 		proteinSequences = new ArrayList<String>();
 		proteinSequences.add("NOT MATCHED");
+		allFoundRegionsInText = new HashMap<String,String>();
 	}
 
 	public Protein(String sequence) {
@@ -32,6 +34,7 @@ public class Protein extends Sequence{
 		setProcessed(false);
 		proteinSequences = new ArrayList<String>();
 		proteinSequences.add("NOT MATCHED");
+		allFoundRegionsInText = new HashMap<String,String>();
 	}
 	
 	public Protein(String sequence, String type) {
@@ -42,6 +45,7 @@ public class Protein extends Sequence{
 		if(type.compareTo("GO") == 0){
 			annotations = new HashMap<String,String>();
 		}
+		allFoundRegionsInText = new HashMap<String,String>();
 	}
 	
 	public Protein(String sequence, String type, String blast2GoFileName) {
@@ -53,6 +57,7 @@ public class Protein extends Sequence{
 			annotations = new HashMap<String,String>();
 		}
 		this.blast2GoFileName = blast2GoFileName;
+		allFoundRegionsInText = new HashMap<String,String>();
 	}
 	
 	/*
@@ -60,13 +65,6 @@ public class Protein extends Sequence{
 		return proteinSequences;
 	}*/
 	
-	public Map<String,String> getAnnotations(){
-		return annotations;
-	}
-	
-	public void setAnnotations(Map<String, String> annotations) {
-		this.annotations = annotations;
-	}
 	
 	/**
 	 * makes a string of all annotations in key/value form
@@ -140,6 +138,21 @@ public class Protein extends Sequence{
 	public void setBlast2GoFileName(String blast2GoFileName) {
 		this.blast2GoFileName = blast2GoFileName;
 	}
-
 	
-}
+	public Map<String, String> getAnnotations() {
+		return annotations;
+	}
+
+	public void setAnnotations(Map<String, String> annotations) {
+		this.annotations = annotations;
+	}
+
+	public Map<String, String> getAllFoundRegionsInText() {
+		return allFoundRegionsInText;
+	}
+
+	public void setAllFoundRegionsInText(Map<String, String> allFoundRegionsInText) {
+		this.allFoundRegionsInText = allFoundRegionsInText;
+	}
+	
+}//class
