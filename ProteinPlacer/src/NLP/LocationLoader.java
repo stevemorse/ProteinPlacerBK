@@ -50,7 +50,7 @@ public class LocationLoader {
 				String goAnnotationNumber = terms[termCount].substring(gObeginPoint, gObeginPoint + 7);
 				String goAnnotationName = terms[termCount].substring(nameBeginPoint,nameEndPoint);
 				goAnnotationName = goAnnotationName.trim();
-				System.out.println("Loading Cell Locations...goAnnotationNumber: " + goAnnotationNumber + " is: " + goAnnotationName);
+				//System.out.println("Loading Cell Locations...goAnnotationNumber: " + goAnnotationNumber + " is: " + goAnnotationName);
 				GoAnnotationLocations.put(goAnnotationNumber, goAnnotationName);
 			}//if a cellular component
 		}//for entryCount

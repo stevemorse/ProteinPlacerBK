@@ -74,12 +74,14 @@ public class SingleAnchorLinkThread extends Thread{
 		List<WebElement> featureElements = null;
 		WebElement inputTextFeildElement = null;
 		String proteinPageUrl = "http://www.ncbi.nlm.nih.gov/protein/";
+		String genbankText = "";
 		
 		//starting more than firefox driver instance at a time can result in socket lock
 		//also manually force re-init of driver to prevent hanging attachment of old driver
 		//to port until garbage collection.
 		//see http://code.google.com/p/selenium/issues/detail?id=5061
 		//see http://stackoverflow.com/questions/16140865/unable-to-bind-to-locking-port-7054-within-45000-ms
+		//fixed by new selenium release
 		final WebDriver driver;
 		//final FirefoxDriverWrapper driver = new FirefoxDriverWrapper();
 		
@@ -117,13 +119,87 @@ public class SingleAnchorLinkThread extends Thread{
 		inputTextFeildElement.submit();
 		
 		//get and process genebank text for the protein accession string corresponds to
-		String source = driver.getPageSource();	
+		//String source = driver.getPageSource();	
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException ie) {
 			System.out.println("InterruptedException: " + ie.getMessage());
 			ie.printStackTrace();
 		}
+		
+		
+		final Wait<WebDriver> waitingDriver = new FluentWait<WebDriver>(driver)
+			       .withTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+			       .pollingEvery(5, java.util.concurrent.TimeUnit.SECONDS);
+		
+		WebElement genbank = null;
+		int errorCount = 0;
+		while(genbank == null  && errorCount < 3){
+			try{
+				genbank = waitingDriver.until(new Function<WebDriver,WebElement>(){
+					public WebElement apply(WebDriver diver){
+						return driver.findElement(By.className("genbank"));
+						}});
+			
+			}//try
+			catch(NoSuchElementException nsee){//if trying to find genebank throws no such element
+				WebElement itemid = null;
+				itemid = null;
+				System.out.println("no genebank elemant returned for accession: " + accession + " " + nsee.getMessage());
+				//check for obsolete link and if found click on it to get obsolete page (with genebank)
+				try{
+					itemid = waitingDriver.until(new Function<WebDriver,WebElement>(){
+						public WebElement apply(WebDriver diver){
+							return driver.findElement(By.className("itemid"));
+							}});
+					WebElement href = itemid.findElement(By.tagName("a"));
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException ie) {
+						System.out.println("InterruptedException: " + ie.getMessage());
+						ie.printStackTrace();
+					}
+					
+					href.click();
+					
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException ie) {
+						System.out.println("InterruptedException: " + ie.getMessage());
+						ie.printStackTrace();
+					}
+					System.out.println(href.getText());
+					System.exit(0);
+				
+				}//try 
+				catch(NoSuchElementException nsee2){//if trying to find the first anchor link throws no such element
+					errorCount++;
+					System.out.println(nsee2.getMessage());
+					WebElement icon  = itemid.findElement(By.className("hi_warn.icon"));
+					String iconText = icon.getText();
+						if (iconText.contains("has been replaced by")){
+							int beginNewAccession = iconText.indexOf("has been replaced by");
+							beginNewAccession += "has been replaced by".length();
+							String newAccession = iconText.substring(beginNewAccession);
+							newAccession = newAccession.trim();
+							System.out.println("submitting new accession code: " + newAccession);
+							inputTextFeildElement.sendKeys(accession);
+							inputTextFeildElement.submit();
+						}//if icon redirects to new accession and old accession has not clicked trough to a page with genebank text
+						if (iconText.contains("error")){
+							System.out.println("found error icon");
+							System.out.println(iconText);
+							System.exit(0);
+							genbankText = "error icon";
+						}//if icon contains an error message
+					genbank = icon;
+				}
+			}//catch
+		}//while not got genebank element
+		
+		if(genbankText.compareToIgnoreCase("error icon") != 0){
+			genbankText = genbank.getText();
+		}//if not error icon retrieve genebank text
 		
 		boolean gotFeatures = false;
 		while(!gotFeatures){
@@ -135,6 +211,8 @@ public class SingleAnchorLinkThread extends Thread{
 				gotFeatures = false;
 			}
 		}//while not gotFeatures
+		
+		
 		
 		
 		ListIterator<WebElement> featureElementsLiterTest = featureElements.listIterator();
@@ -171,50 +249,9 @@ public class SingleAnchorLinkThread extends Thread{
 			}//while termsLiter
 		}//while featureElementsLiter
 		
-		final Wait<WebDriver> waitingDriver = new FluentWait<WebDriver>(driver)
-			       .withTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-			       .pollingEvery(5, java.util.concurrent.TimeUnit.SECONDS);
-		
-		WebElement genbank = null;
-		int errorCount = 0;
-		while(genbank == null  && errorCount < 3){
-			try{
-				genbank = waitingDriver.until(new Function<WebDriver,WebElement>(){
-					public WebElement apply(WebDriver diver){
-						return driver.findElement(By.className("genbank"));
-						}});
-			
-			}//try
-			catch(NoSuchElementException nsee){
-				WebElement itemid = null;
-				itemid = null;
-				System.out.println("no genebank elemant returned for accession: " + accession + " " + nsee.getMessage());
-				//check for obsolete link and if found click on it to get obsolete page (with genebank)
-				try{
-					itemid = waitingDriver.until(new Function<WebDriver,WebElement>(){
-						public WebElement apply(WebDriver diver){
-							return driver.findElement(By.className("itemid"));
-							}});
-					WebElement href = itemid.findElement(By.tagName("a"));
-					//System.out.println(href.getText());
-					href.click();
-					//System.exit(0);
-				
-				}//try 
-				catch(NoSuchElementException nsee2){
-					errorCount++;
-					System.out.println(nsee2.getMessage());
-					WebElement error = itemid.findElement(By.className("icon"));
-					System.out.println("found error icon");
-					System.out.println(error.getText());
-					System.exit(0);
-					genbank = error;
-				}
-			}//catch
-		}//while not got genebank element
 		
 		
-		String genbankText = genbank.getText();
+		
 		
 		//make output to source text file
 		PrintWriter	writer = null;
@@ -299,13 +336,16 @@ public class SingleAnchorLinkThread extends Thread{
 				WebElement currentGoAnchor = goAnchorsLiter.next();
 				String currentGoAnchorString = currentGoAnchor.getText();
 				String currentGoAnchorURLString = currentGoAnchor.getAttribute("href");
-				System.out.println("GO anchor text: " + currentGoAnchorString + " href is: " + currentGoAnchorURLString);
-				if(goAssensionTextList.contains(currentGoAnchorString)){				
-					processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GO", debug);		
-				}
-				if(goAssensionQuickTextList.contains(currentGoAnchorString)){				
-					processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GOA", debug);		
-				}
+				if(currentGoAnchorURLString != null){ 
+					if(goAssensionTextList.contains(currentGoAnchorString)){
+						System.out.println("GO anchor text: " + currentGoAnchorString + " href is: " + currentGoAnchorURLString);
+						processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GO", debug);		
+					}
+					if(goAssensionQuickTextList.contains(currentGoAnchorString)){
+						System.out.println("GOA anchor text: " + currentGoAnchorString + " href is: " + currentGoAnchorURLString);
+						processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GOA", debug);		
+					}
+				}//currentGoAnchorURLString != null
 			}//while(goAnchorsLiter.hasNext())
 		}//end if (genbankText.compareToIgnoreCase(error icon) != 0){
 	

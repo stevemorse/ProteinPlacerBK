@@ -52,7 +52,7 @@ public void getSequences(File inSequencesFile, List<Protein> proteinList){
 				blast2GoFileName = blast2GoFileName.replace("/", "--");
 			}
 			*/
-			System.out.println("blast2GoFileName: " + blast2GoFileName + "\nsequence: " + sequence);
+			//System.out.println("blast2GoFileName: " + blast2GoFileName + "\nsequence: " + sequence);
 			SequenceList.add(sequence);
 			Protein currentProtein = new Protein(sequence,"GO",blast2GoFileName);
 			proteinList.add(currentProtein);

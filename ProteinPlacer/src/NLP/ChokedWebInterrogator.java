@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,6 +19,7 @@ import java.util.concurrent.Executors;
 
 import org.openqa.selenium.remote.UnreachableBrowserException;
 
+import ThreadPools.TheSinglePriorityThreadPool;
 import protein.Protein;
 import utils.FileCharReader;
 import utils.SingleLock;
@@ -31,7 +34,8 @@ public class ChokedWebInterrogator{
 	private static int InputFileNumber = 0;
 	private static double thresholdEValue = 1.0E-30;
 	private static String inSequencesFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Fasta";
-	private static String outFileFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
+	private static String outFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
+	private static String outTextFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private static File inLocationsOBOFile = new File ("/home/steve/Desktop/ProteinPlacer/cellular_components.obo");
 	private static String proteinsOutFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private static String proteinDataInFileString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
@@ -62,14 +66,17 @@ public class ChokedWebInterrogator{
 		
 		inSequencesFile = new File (inSequencesFileBaseString + InputFileNumber + ".txt");
 		proteinsOutFile = new File(proteinsOutFileBaseString + InputFileNumber + "/proteinsOut_" + InputFileNumber + ".bin");
-		outFile = new File(outFileFileBaseString + InputFileNumber + "/outSource_" + InputFileNumber + ".txt");
+		outFile = new File(outFileBaseString + InputFileNumber + "/outSource_" + InputFileNumber + ".txt");
+		File threadLogFile = new File(proteinsOutFileBaseString + InputFileNumber + "/ThreadLog_" + InputFileNumber + ".txt");
+		File textOutFile = new File(outTextFileBaseString + InputFileNumber + "/textOutOfProtiens"
+				+ "_" + InputFileNumber + ".txt");
 		File blastDataInFile = new File(proteinDataInFileString + InputFileNumber + "/blastResult_" + InputFileNumber + ".xml");
 		File blastAnnotationsInFile = new File(proteinDataInFileString + InputFileNumber + "/annot_Seqs_" + InputFileNumber + ".txt");
 		
 		Map<String, String> goAnnotationLocations = new HashMap<String, String>();
 		LocationLoader loader = new LocationLoader();
 		goAnnotationLocations = loader.loadLocations(inLocationsOBOFile, debug);
-		AnchorLinkThreadGateway theAnchorLinkThreadGateway = AnchorLinkThreadGateway.getInstance();
+		TheSinglePriorityThreadPool.getInstance();
 
 		//read sequence data from fasta file
 		getSequences(inSequencesFile,proteinList);
@@ -86,11 +93,14 @@ public class ChokedWebInterrogator{
 		//get GO annotations
 		Map<String, Map<String, String>> goAnnotations = getGOAnnotations(blastAnnotationsInFile);
 		
+		PrintWriter ThreadLogOut = null;
 		FileOutputStream fout;
 		ObjectOutputStream oos = null;
 		try {
 			fout = new FileOutputStream(proteinsOutFile);
 			oos = new ObjectOutputStream(fout);
+			ThreadLogOut = new PrintWriter(new FileWriter(threadLogFile));
+			ThreadLogOut.close();
 		} catch (FileNotFoundException fnfe) {
 			System.err.println("error opening output file: " + fnfe.getMessage());
 			fnfe.printStackTrace();
@@ -123,7 +133,7 @@ public class ChokedWebInterrogator{
 					}//if(cellLocationGOCodes.contains(currentGoAnchorString)
 				}//while currentProteinGoCodesLiter
 			}//annotation not null
-			Thread oneProteinWorkerThread = null;
+			//Thread oneProteinWorkerThread = null;
 			currentDone = true;
 			do{
 				try{
@@ -139,7 +149,9 @@ public class ChokedWebInterrogator{
 							if(eValue < thresholdEValue){
 								//process presumed non-random hit
 								StringBuilder region = new StringBuilder("");
-								theAnchorLinkThreadGateway.getAnchorLinkThread(currentProtien, accession, region, goAnnotationLocations, blastAnnotationsInFile, firstAccession, finished);
+								//theAnchorLinkThreadGateway.getAnchorLinkThread(currentProtien, accession, region, goAnnotationLocations, textOutFile, firstAccession, finished);
+								TheSinglePriorityThreadPool.getAnchorLinkThread(currentProtien, accession, region, 
+										goAnnotationLocations, textOutFile, threadLogFile, firstAccession, firstAccession);
 								firstAccession = false;
 								currentProtien.getAllFoundRegionsInText().put(accession,region.toString());
 							}//if eValue of current accession (probability of hit being random) is lower than the threshold probability (eValue)
@@ -154,11 +166,11 @@ public class ChokedWebInterrogator{
 					}//else no further processing required
 				}
 				catch(UnreachableBrowserException ube){
-					oneProteinWorkerThread.interrupt();
+					//oneProteinWorkerThread.interrupt();
 					currentDone = false;
 				}
 				catch(org.openqa.selenium.WebDriverException wbe){
-					oneProteinWorkerThread.interrupt();
+					//oneProteinWorkerThread.interrupt();
 					currentDone = false;
 				}catch (FileNotFoundException fnfe) {
 					System.err.println("error opening output file: " + fnfe.getMessage());
@@ -295,6 +307,7 @@ public class ChokedWebInterrogator{
 			int queryNameEnd = annotationsString.indexOf(" ");
 			String query = annotationsString.substring(0, queryNameEnd);
 			query = query.trim();
+			System.out.println("trimmed query: " + query);
 			int goBegin = annotationsString.indexOf("GO:");
 			String afterGoBegin = annotationsString.substring(goBegin);
 			//System.out.println("afterGoBegin: " + afterGoBegin + "length: " + afterGoBegin.length());

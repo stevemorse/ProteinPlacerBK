@@ -30,14 +30,14 @@ public class GoAnchorLinkThreadGateway {
 	}//getInstance
 	
 	//thread pool manager
-		public static void getAnchorLinkThread(Protein currentProtein, String url, String currentGoAnchorString, 
-				Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, boolean debug){
-			
-			goAnchorPool.execute(new SinleGoAnchorThread(currentProtein, url, currentGoAnchorString, GoAnnotationLocations, TypeOfGoLookup, debug));
-		}
+	public static void getAnchorLinkThread(Protein currentProtein, String url, String currentGoAnchorString, 
+			Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, boolean debug){
 		
-		public static void AnchorPoolCleanup(){
-			goAnchorPool.shutdown();
-			while(!goAnchorPool.isTerminated()){}//wait on thread termination
-		}
+		goAnchorPool.execute(new SingleGoAnchorThread(currentProtein, url, currentGoAnchorString, GoAnnotationLocations, TypeOfGoLookup, debug));
+	}
+	
+	public static void AnchorPoolCleanup(){
+		goAnchorPool.shutdown();
+		while(!goAnchorPool.isTerminated()){}//wait on thread termination
+	}
 }//class

@@ -15,7 +15,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 
 import protein.Protein;
 
-public class SinleGoAnchorThread extends Thread{
+public class SingleGoAnchorThread extends Thread{
 	/**
 	 * Processes a link to either an AmiGO or classic GO web page to extract GO 
 	 * annotations, if there are any more, and see if any are GO 
@@ -37,7 +37,7 @@ public class SinleGoAnchorThread extends Thread{
 	
 	//public void processGoAnchor(Protein currentProtein, String url, String currentGoAnchorString, 
 	//		Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, boolean debug) throws org.openqa.selenium.WebDriverException{
-	public SinleGoAnchorThread(Protein currentProtein, String url, String currentGoAnchorString, 
+	public SingleGoAnchorThread(Protein currentProtein, String url, String currentGoAnchorString, 
 			Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, boolean debug) {
 		currentProtein = currentProtein;
 		url = url;
