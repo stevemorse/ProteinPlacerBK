@@ -184,62 +184,29 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 				}//synchronized
 			}//try
 			catch(NoSuchElementException nsee){//if trying to find genebank throws no such element
+				synchronized(threadLogFile){
+					try {
+						threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+					} catch (IOException ioe) {
+						System.out.println("error opening file for append: " + ioe.getMessage());
+						ioe.printStackTrace();
+					}//catch
+					threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " cannot retrieve genbank for: " 
+					+ accession + " " + nsee.getMessage());
+					threadLogWriter.flush();
+					threadLogWriter.close();
+				}//synchronized
 				errorCount++;
 				WebElement itemid = null;
-				itemid = null;
 				System.out.println("no genebank elemant returned for accession: " + accession + " " + nsee.getMessage());
-				//check for obsolete link and if found click on it to get obsolete page (with genebank)
+				
+				//check for obsolete link and if found go to it to get obsolete page (with genebank)
 				try{
 					itemid = waitingDriver.until(new Function<WebDriver,WebElement>(){
 						public WebElement apply(WebDriver diver){
 							return driver.findElement(By.className("itemid"));
 							}});
-					WebElement href = itemid.findElement(By.tagName("a"));
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException ie) {
-						System.out.println("InterruptedException: " + ie.getMessage());
-						ie.printStackTrace();
-					}
-					synchronized(threadLogFile){
-						try {
-							threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
-						} catch (IOException ioe) {
-							System.out.println("error opening file for append: " + ioe.getMessage());
-							ioe.printStackTrace();
-						}//catch
-						threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " finds anchor redirect for: " + accession);
-						threadLogWriter.flush();
-						threadLogWriter.close();
-					}//synchronized
 					
-					href.click();
-					
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException ie) {
-						System.out.println("InterruptedException: " + ie.getMessage());
-						ie.printStackTrace();
-						doneGenebank = false;
-					}
-					System.out.println(href.getText());
-					synchronized(threadLogFile){
-						try {
-							threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
-						} catch (IOException ioe) {
-							System.out.println("error opening file for append: " + ioe.getMessage());
-							ioe.printStackTrace();
-						}//catch
-						threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " redirects to: " + href.getText());
-						threadLogWriter.flush();
-						threadLogWriter.close();
-					}//synchronized
-					//System.exit(0);
-					doneGenebank = false;
-				}//try 
-				catch(NoSuchElementException nsee2){//if trying to find the first anchor link throws no such element
-					errorCount++;
-					System.out.println(nsee2.getMessage());
 					WebElement icon  = itemid.findElement(By.className("hi_warn.icon"));
 					String iconText = icon.getText();
 					if (iconText.contains("has been replaced by")){
@@ -250,7 +217,6 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 						System.out.println("submitting new accession code: " + newAccession);
 						inputTextFeildElement.sendKeys(accession);
 						inputTextFeildElement.submit();
-						doneGenebank = false;
 						synchronized(threadLogFile){
 							try {
 								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
@@ -262,13 +228,14 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.flush();
 							threadLogWriter.close();
 						}//synchronized
-					}//if icon redirects to new accession and old accession has not clicked trough to a page with genebank text
-					if (iconText.contains("error")){
+						doneGenebank = false;
+					}//if icon redirects to new accession and old accession 
+					
+					else if (iconText.contains("error")){
 						System.out.println("found error icon");
 						System.out.println(iconText);
 						System.exit(0);
 						genbankText = "error icon";
-						doneGenebank = true;
 						synchronized(threadLogFile){
 							try {
 								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
@@ -280,13 +247,14 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.flush();
 							threadLogWriter.close();
 						}//synchronized
+						doneGenebank = true;
 					}//if icon contains an error message
-					if (iconText.contains("record removed")){
+					
+					else if (iconText.contains("record removed")){
 						System.out.println("found record removed icon");
 						System.out.println(iconText);
 						System.exit(0);
 						genbankText = "record removed";
-						doneGenebank = true;
 						synchronized(threadLogFile){
 							try {
 								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
@@ -298,11 +266,84 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.flush();
 							threadLogWriter.close();
 						}//synchronized
+						doneGenebank = true;
 					}//if icon contains a record removed message
+					
+					else{
+						WebElement href = itemid.findElement(By.tagName("a"));
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException ie) {
+							System.out.println("InterruptedException: " + ie.getMessage());
+							ie.printStackTrace();
+						}
+						synchronized(threadLogFile){
+							try {
+								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+							} catch (IOException ioe) {
+								System.out.println("error opening file for append: " + ioe.getMessage());
+								ioe.printStackTrace();
+							}//catch
+							threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " finds anchor redirect for: " + accession);
+							threadLogWriter.flush();
+							threadLogWriter.close();
+						}//synchronized
+						
+						href.click();
+						
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException ie) {
+							System.out.println("InterruptedException: " + ie.getMessage());
+							ie.printStackTrace();
+							doneGenebank = false;
+						}
+						System.out.println(href.getText());
+						synchronized(threadLogFile){
+							try {
+								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+							} catch (IOException ioe) {
+								System.out.println("error opening file for append: " + ioe.getMessage());
+								ioe.printStackTrace();
+							}//catch
+							threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " redirects to: " + href.getText());
+							threadLogWriter.flush();
+							threadLogWriter.close();
+						}//synchronized
+						
+						//System.exit(0);
+						doneGenebank = false;
+					}//last else
 					genbank = icon;
+				}//try 
+				catch(NoSuchElementException nsee2){//if trying to find all of the above fails
+					System.out.println(nsee2.getMessage());
+					try {
+						threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+					} catch (IOException ioe) {
+						System.out.println("error opening file for append: " + ioe.getMessage());
+						ioe.printStackTrace();
+					}//catch
+					threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " has failed " + nsee2.getMessage());
+					threadLogWriter.flush();
+					threadLogWriter.close();
 				}//catch NoSuchElementException nsee2
 			}//catch NoSuchElementException nsee
 		}//while not got genebank element
+		
+		synchronized(threadLogFile){
+			try {
+				threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+			} catch (IOException ioe) {
+				System.out.println("error opening file for append: " + ioe.getMessage());
+				ioe.printStackTrace();
+			}//catch
+			threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + "leaves genebank loop with values errorCount = "
+			+ errorCount + " doneGenebank = " + doneGenebank);
+			threadLogWriter.flush();
+			threadLogWriter.close();
+		}//synchronized
+		
 		
 		if((genbankText.compareToIgnoreCase("error icon") != 0) && (genbankText.compareToIgnoreCase("record removed") != 0) 
 				&& (genbank != null)){
@@ -444,27 +485,10 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.close();
 						}//synchronized
 						processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GO", threadLogFile, debug);		
-					}
-					/*
-					if(goAssensionQuickTextList.contains(currentGoAnchorString)){
-						System.out.println("GOA anchor text: " + currentGoAnchorString + " href is: " + currentGoAnchorURLString);
-						synchronized(threadLogFile){
-							try {
-								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
-							} catch (IOException ioe) {
-								System.out.println("error opening file for append: " + ioe.getMessage());
-								ioe.printStackTrace();
-							}//catch
-							threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " spawns GOA anchor thread for url: " + currentGoAnchorURLString);
-							threadLogWriter.flush();
-							threadLogWriter.close();
-						}//synchronized
-						processGoAnchor(currentProtien, currentGoAnchorURLString, currentGoAnchorString, GoAnnotationLocations, "GOA", threadLogFile, debug);		
-					}
-					*/
+					}//if goAssensionTextList.contains(currentGoAnchorString
 				}//currentGoAnchorURLString != null
 			}//while(goAnchorsLiter.hasNext())
-		}//if gotGenebank{
+		}//if gotGenebank
 		
 		//make output to source text file
 		PrintWriter	writer = null;
@@ -474,19 +498,25 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 			System.out.println("IOException: " + e.getMessage());
 			e.printStackTrace();
 		}
-		synchronized(outFile){			
-			ListIterator<String> sourceOrProteinFeatureTextLiterForWrite = sourceOrProteinFeaturesListText.listIterator();
-			writer.println("protein: " + currentProtien.toString());
-			writer.println("source and protien feature texts");
-			while(sourceOrProteinFeatureTextLiterForWrite.hasNext()){
-				String featureText = sourceOrProteinFeatureTextLiterForWrite.next();
-				writer.println(featureText);
-			}//while featureElementsLiter
-			writer.println();
-			writer.flush();
+		synchronized(outFile){	
+			if (sourceOrProteinFeaturesListText != null){
+				ListIterator<String> sourceOrProteinFeatureTextLiterForWrite = sourceOrProteinFeaturesListText.listIterator();
+				writer.println("protein: " + currentProtien.toString());
+				writer.println("source and protien feature texts");
+				while(sourceOrProteinFeatureTextLiterForWrite.hasNext()){
+					String featureText = sourceOrProteinFeatureTextLiterForWrite.next();
+					writer.println(featureText);
+				}//while featureElementsLiter
+			}//if (sourceOrProteinFeaturesListText != null)
+			else{
+				writer.println("protein: " + currentProtien.toString());
+				writer.println("has no features");
+			}//else
+				writer.println();
+				writer.flush();
+			
 			writer.close();
 		}//synch
-		
 		
 		System.out.println("Thread Id: " + threadId + " with thread name: " + threadName + " tries to close browser for: " + proteinName);
 		String currentUrl = driver.getCurrentUrl();
@@ -506,12 +536,7 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 		driver.quit();
 		//forceClose(driver);
 		region.append(foundRegion);
-		/*
-		currentUrl = driver.getCurrentUrl();
-		if(currentUrl == null){
-			currentUrl = "null";
-		}//if
-		*/
+
 		System.out.println("Thread Id: " + threadId + " with thread name: " + threadName + " ends run method");
 		synchronized(threadLogFile){
 			try {
@@ -520,8 +545,8 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 				System.out.println("error opening file for append: " + ioe.getMessage());
 				ioe.printStackTrace();
 			}//catch
-			threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " ends run method");
 			threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " driver on url: " + currentUrl + " after close attempt has quit: " + driverHasQuit(driver));
+			threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " ends run method");		
 			threadLogWriter.flush();
 			threadLogWriter.close();
 		}//synchronized(writeToThreadLogLock)

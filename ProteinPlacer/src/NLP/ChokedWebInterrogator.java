@@ -93,14 +93,14 @@ public class ChokedWebInterrogator{
 		//get GO annotations
 		Map<String, Map<String, String>> goAnnotations = getGOAnnotations(blastAnnotationsInFile);
 		
-		PrintWriter ThreadLogOut = null;
+		PrintWriter threadLogWriter = null;
 		FileOutputStream fout;
 		ObjectOutputStream oos = null;
 		try {
 			fout = new FileOutputStream(proteinsOutFile);
 			oos = new ObjectOutputStream(fout);
-			ThreadLogOut = new PrintWriter(new FileWriter(threadLogFile));
-			ThreadLogOut.close();
+			threadLogWriter = new PrintWriter(new FileWriter(threadLogFile));
+			threadLogWriter.close();
 		} catch (FileNotFoundException fnfe) {
 			System.err.println("error opening output file: " + fnfe.getMessage());
 			fnfe.printStackTrace();
@@ -111,8 +111,10 @@ public class ChokedWebInterrogator{
 		
 		boolean currentDone = true;
 		boolean finished = false;
+		int protienCount = 0;
 		while(proteinListLiter.hasNext() && !finished){
 			currentProtien = proteinListLiter.next();
+			protienCount++;
 			//load Accession ids from file and associate with protein
 			Map<String, String> currentAccessionIds = accessionIds.get(currentProtien.getBlast2GoFileName());
 			//trim out annotation under eValue
@@ -137,6 +139,17 @@ public class ChokedWebInterrogator{
 			currentDone = true;
 			do{
 				try{
+					synchronized(threadLogFile){
+						try {
+							threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+						} catch (IOException ioe) {
+							System.out.println("erroe opening file for write " +ioe.getMessage());
+							ioe.printStackTrace();
+						}//catch
+						threadLogWriter.println("processin protein: " + protienCount + " of: " + proteinList.size());
+						threadLogWriter.close();
+					}//synchronized
+					
 					if(currentAccessionIds != null && currentAccessionIds.size() >0){
 						boolean firstAccession = true;
 						Iterator<String> currentAccessionIdsIter = currentAccessionIds.keySet().iterator();
@@ -179,7 +192,7 @@ public class ChokedWebInterrogator{
 					System.err.println("error opening output stream: " + ioe.getMessage());
 					ioe.printStackTrace();
 				}
-			}while(!currentDone); //retry current protein thread if browser failure occurs in SingleAnchorThread
+			}while(!currentDone); //retry current protein thread if browser failure occurs in SingleAnchorThreadRunner
 			
 			//finished = true; //set for one loop only...test code against first protein only
 		}//while sequenceListLiter
@@ -197,7 +210,20 @@ public class ChokedWebInterrogator{
 			System.err.println("error opening output stream: " + ioe.getMessage());
 			ioe.printStackTrace();
 		}
-	}//process
+	    
+	    TheSinglePriorityThreadPool.getInstance().shutdown();
+	    
+	    synchronized(threadLogFile){
+			try {
+				threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+			} catch (IOException ioe) {
+				System.out.println("error opening file for write " +ioe.getMessage());
+				ioe.printStackTrace();
+			}//catch
+			threadLogWriter.println("ChockedWebInterrogator terminates normally");
+			threadLogWriter.close();
+		}//synchronized
+	}//method interrogate
 	
 	/**
 	 * Loads all protein sequences from a file into a List of Proteins.

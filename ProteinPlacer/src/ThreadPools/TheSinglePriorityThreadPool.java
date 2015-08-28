@@ -94,13 +94,17 @@ public class TheSinglePriorityThreadPool {
 		while(!goAnchorPool.isTerminated()){}//wait on thread termination
 	}//AnchorPoolCleanup
 	*/
-		
+	
+	public void shutdown(){
+		theOnlyPool.shutdown();
+	}//shutdown
+	
 	/**
 	 * From oracle docs
 	 * http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html
 	 * @param pool
 	 */
-	void shutdownAndAwaitTermination(ExecutorService pool) {
+	public void shutdownAndAwaitTermination(ExecutorService pool) {
 		pool.shutdown(); // Disable new tasks from being submitted
 		try {
 			// Wait a while for existing tasks to terminate
