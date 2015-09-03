@@ -99,6 +99,21 @@ public class TheSinglePriorityThreadPool {
 		theOnlyPool.shutdown();
 	}//shutdown
 	
+	public boolean awaitTermination(long timeout, TimeUnit unit){
+		boolean result = false;
+		try {
+			result = theOnlyPool.awaitTermination(timeout, unit);
+		} catch (InterruptedException ie) {
+			System.err.println("ioexception in await termination " + ie.getMessage());
+			ie.printStackTrace();
+		}
+		return result;
+	}
+	
+	public boolean isShutDown(){
+		return theOnlyPool.isShutdown();
+	}
+	
 	/**
 	 * From oracle docs
 	 * http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html

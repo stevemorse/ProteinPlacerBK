@@ -19,7 +19,10 @@ public class Protein extends Sequence{
 	private Map<String,String> allFoundRegionsInText = null;
 	private List<String> proteinSequences = null;
 	private String blast2GoFileName = null;
+	private String errorMode = "";
 	private boolean processed;
+	private boolean gotGenebank;
+	
 	
 	public Protein() {
 		super();
@@ -59,12 +62,6 @@ public class Protein extends Sequence{
 		this.blast2GoFileName = blast2GoFileName;
 		allFoundRegionsInText = new HashMap<String,String>();
 	}
-	
-	/*
-	public List<String> getProteinSequence(){
-		return proteinSequences;
-	}*/
-	
 	
 	/**
 	 * makes a string of all annotations in key/value form
@@ -131,6 +128,13 @@ public class Protein extends Sequence{
 		this.processed = processed;
 	}
 
+	public String getErrorMode() {
+		return errorMode;
+	}
+
+	public void setErrorMode(String errorMode) {
+		this.errorMode = errorMode;
+	}
 	public String getBlast2GoFileName() {
 		return blast2GoFileName;
 	}
@@ -153,6 +157,14 @@ public class Protein extends Sequence{
 
 	public void setAllFoundRegionsInText(Map<String, String> allFoundRegionsInText) {
 		this.allFoundRegionsInText = allFoundRegionsInText;
+	}
+
+	public boolean isGotGenebank() {
+		return gotGenebank;
+	}
+
+	public void setGotGenebank(boolean gotGenebank) {
+		this.gotGenebank = gotGenebank;
 	}
 	
 }//class

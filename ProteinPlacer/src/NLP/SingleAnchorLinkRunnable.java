@@ -164,13 +164,17 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 		WebElement genbank = null;
 		int errorCount = 0;
 		boolean doneGenebank = false;
-		while(/*genbank == null  ||*/ (errorCount < 5 && !doneGenebank)){
+		while((errorCount < 5) && (!doneGenebank)){
 			try{
 				genbank = waitingDriver.until(new Function<WebDriver,WebElement>(){
 					public WebElement apply(WebDriver diver){
 						return driver.findElement(By.className("genbank"));
 						}});
 				doneGenebank = true;
+				if(!currentProtien.isGotGenebank()){
+					currentProtien.setGotGenebank(true);
+					currentProtien.setErrorMode("");
+				}//if(!currentProtien.isGotGenebank()
 				synchronized(threadLogFile){
 					try {
 						threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
@@ -229,6 +233,9 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.close();
 						}//synchronized
 						doneGenebank = false;
+						if(currentProtien.getErrorMode().compareToIgnoreCase("") == 0){
+							currentProtien.setErrorMode("replaced");
+						}//if error mode not yet set
 					}//if icon redirects to new accession and old accession 
 					
 					else if (iconText.contains("error")){
@@ -248,6 +255,9 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.close();
 						}//synchronized
 						doneGenebank = true;
+						if(currentProtien.getErrorMode().compareToIgnoreCase("") == 0){
+							currentProtien.setErrorMode("error");
+						}//if error mode not yet set
 					}//if icon contains an error message
 					
 					else if (iconText.contains("record removed")){
@@ -267,6 +277,9 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.close();
 						}//synchronized
 						doneGenebank = true;
+						if(currentProtien.getErrorMode().compareToIgnoreCase("") == 0){
+							currentProtien.setErrorMode("removed");
+						}//if error mode not yet set
 					}//if icon contains a record removed message
 					
 					else{
@@ -310,9 +323,11 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 							threadLogWriter.flush();
 							threadLogWriter.close();
 						}//synchronized
-						
-						//System.exit(0);
+
 						doneGenebank = false;
+						if(currentProtien.getErrorMode().compareToIgnoreCase("") == 0){
+							currentProtien.setErrorMode("anchor");
+						}//if error mode not yet set
 					}//last else
 					genbank = icon;
 				}//try 

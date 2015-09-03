@@ -1,11 +1,16 @@
 package NLP;
 
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -16,6 +21,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.remote.UnreachableBrowserException;
 
@@ -94,7 +100,7 @@ public class ChokedWebInterrogator{
 		Map<String, Map<String, String>> goAnnotations = getGOAnnotations(blastAnnotationsInFile);
 		
 		PrintWriter threadLogWriter = null;
-		FileOutputStream fout;
+		FileOutputStream fout = null;
 		ObjectOutputStream oos = null;
 		try {
 			fout = new FileOutputStream(proteinsOutFile);
@@ -143,10 +149,17 @@ public class ChokedWebInterrogator{
 						try {
 							threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
 						} catch (IOException ioe) {
-							System.out.println("erroe opening file for write " +ioe.getMessage());
+							System.out.println("error opening file for write " +ioe.getMessage());
 							ioe.printStackTrace();
 						}//catch
-						threadLogWriter.println("processin protein: " + protienCount + " of: " + proteinList.size());
+						int numAccesions = 0;
+						if(currentAccessionIds != null){
+							numAccesions = currentAccessionIds.size();
+						}
+						else{
+							numAccesions = -1;
+						}
+						threadLogWriter.println("processin protein: " + protienCount + " of: " + proteinList.size() + " with " + numAccesions + "accessions");
 						threadLogWriter.close();
 					}//synchronized
 					
@@ -196,22 +209,27 @@ public class ChokedWebInterrogator{
 			
 			//finished = true; //set for one loop only...test code against first protein only
 		}//while sequenceListLiter
-			
-		//executor.shutdown();
-	    // Wait until all threads are finish
-	    //while (!executor.isTerminated()) {}
-	    
+		
 	    try {	
 	    	oos.close();
+	    	fout.close();
 		} catch (FileNotFoundException fnfe) {
-			System.err.println("error opening output file: " + fnfe.getMessage());
+			System.err.println("error closing output file: " + fnfe.getMessage());
 			fnfe.printStackTrace();
 		} catch (IOException ioe) {
-			System.err.println("error opening output stream: " + ioe.getMessage());
+			System.err.println("error closing output stream: " + ioe.getMessage());
 			ioe.printStackTrace();
 		}
 	    
 	    TheSinglePriorityThreadPool.getInstance().shutdown();
+	    
+	    System.out.println("threadpool is shutdown = " + TheSinglePriorityThreadPool.getInstance().isShutDown());	   
+	   
+	    while(!TheSinglePriorityThreadPool.getInstance().awaitTermination(1000L, TimeUnit.SECONDS)){
+	    	System.out.println("wait 1000 seconds for all tasks to terminate");
+	    }//while not all threads terminated
+	    	
+	    windupStats(outFile,threadLogFile);
 	    
 	    synchronized(threadLogFile){
 			try {
@@ -224,7 +242,7 @@ public class ChokedWebInterrogator{
 			threadLogWriter.close();
 		}//synchronized
 	}//method interrogate
-	
+
 	/**
 	 * Loads all protein sequences from a file into a List of Proteins.
 	 * @param inSequencesFile	The file from which to load the protein sequences.
@@ -375,5 +393,99 @@ public class ChokedWebInterrogator{
 			}//while
 		}//if not null
 	}//trim
+	
+	/**
+	 * 
+	 * @param outFile
+	 * @param threadLogFile
+	 */
+	private void windupStats(File outFile, File threadLogFile) {
+		//get the processed proteins from the outFile
+		int proteinsRead = 0;
+		ObjectInput ois = null;
+		List<Protein> ProteinList = new ArrayList<Protein>();
+		try {
+			InputStream fin = new FileInputStream(proteinsOutFile);
+			ois = new ObjectInputStream(fin);
+			while(true){
+				try{
+					Object obj = ois.readObject();
+					Protein currentProtein = (Protein) obj;
+					ProteinList.add(currentProtein);
+					proteinsRead++;
+				} catch (EOFException eofe) {
+					ois.close();
+					fin.close();
+					break;
+				}//catch EOFException
+			}//while
+					
+		} catch (ClassNotFoundException cnfe) {
+			System.err.println("cannot find protein class on file open: " + cnfe.getMessage());
+			cnfe.printStackTrace();
+		} catch (FileNotFoundException fnfe) {
+			System.err.println("error opening output file: " + fnfe.getMessage());
+			fnfe.printStackTrace();
+		} catch (IOException ioe) {
+			System.err.println("error opening output stream: " + ioe.getMessage());
+			ioe.printStackTrace();
+		}//last catch
+		
+		
+		
+		//iterate through protein list accumulating stats on error modes and if a genebank was found for that protein
+		int numGenebankFound = 0;
+		int numRecoredRemoved = 0;
+		int numError = 0;
+		int numAnchor = 0;
+		int numReplaced = 0;
+		int numNotClassified = 0;
+		ListIterator<Protein> proteinListLiter = proteinList.listIterator();
+		int proteinCounter = 0;
+		Protein currentProtien = null;
+		while(proteinListLiter.hasNext()){
+			proteinCounter++;
+			currentProtien = proteinListLiter.next();
+			if(currentProtien.isGotGenebank()){
+				numGenebankFound++;
+			}
+			else if(currentProtien.getErrorMode().compareToIgnoreCase("removed") == 0){
+				numRecoredRemoved++;
+			}
+			else if(currentProtien.getErrorMode().compareToIgnoreCase("error") == 0){
+				numError++;
+			}
+			else if(currentProtien.getErrorMode().compareToIgnoreCase("anchor") == 0){
+				numAnchor++;
+			}
+			else if(currentProtien.getErrorMode().compareToIgnoreCase("replaced") == 0){
+				numReplaced++;
+			}
+			else{
+				System.err.println("protein " + proteinCounter + " is not classified");
+				numNotClassified++;
+			}
+		}//while proteinListLiter hasNext
+		
+		//now make final output
+		PrintWriter threadLogWriter = null;
+		synchronized(threadLogFile){
+			int numProteinsInList = proteinList.size();
+			try {
+				threadLogWriter = new PrintWriter(new FileWriter(threadLogFile,true));
+				threadLogWriter.println("number of proteins read = " + proteinsRead);
+				threadLogWriter.println("number of proteins for which at least 1 genbank element was found is: " + numGenebankFound + " in lsit of: " + numProteinsInList);
+				threadLogWriter.println("number of proteins with error mode error: " + numError);
+				threadLogWriter.println("number of proteins with error mode removed: " + numRecoredRemoved);
+				threadLogWriter.println("number of proteins with error mode replaced: " + numReplaced);
+				threadLogWriter.println("number of proteins with error mode anchor: " + numAnchor);
+				threadLogWriter.println("number of proteins not classified: " + numNotClassified);
+				threadLogWriter.close();
+			} catch (IOException ioe) {
+				System.err.println("error opening output stream: " + ioe.getMessage());
+				ioe.printStackTrace();
+			}//last catch
+		}//synchronized
+	}//windupStats
 	
 }//class
