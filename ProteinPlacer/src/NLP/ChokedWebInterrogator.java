@@ -37,9 +37,9 @@ import utils.SingleLock;
  *
  */
 public class ChokedWebInterrogator{
-	private static int InputFileNumber = 0;
+	private static int inputFileNumber = 0;
 	private static double thresholdEValue = 1.0E-30;
-	private static String inSequencesFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Fasta";
+	private static final String inSequencesFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Fasta";
 	private static String outFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private static String outTextFileBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private static File inLocationsOBOFile = new File ("/home/steve/Desktop/ProteinPlacer/cellular_components.obo");
@@ -59,9 +59,11 @@ public class ChokedWebInterrogator{
 	 * @param threads	Size of the threadpool	
 	 * @param debug	Verbose flag
 	 */
-	public ChokedWebInterrogator(List<Protein> proteinList, int threads, boolean debug){
+	public ChokedWebInterrogator(List<Protein> proteinList, int threads, int inputFileNumber, boolean debug){
 		this.debug = debug;
 		processOneProteinThreads = threads;
+		inputFileNumber = inputFileNumber;
+		
 	}
 	
 	/**
@@ -70,14 +72,14 @@ public class ChokedWebInterrogator{
 	 */
 	public void interrogate(){
 		
-		inSequencesFile = new File (inSequencesFileBaseString + InputFileNumber + ".txt");
-		proteinsOutFile = new File(proteinsOutFileBaseString + InputFileNumber + "/proteinsOut_" + InputFileNumber + ".bin");
-		outFile = new File(outFileBaseString + InputFileNumber + "/outSource_" + InputFileNumber + ".txt");
-		File threadLogFile = new File(proteinsOutFileBaseString + InputFileNumber + "/ThreadLog_" + InputFileNumber + ".txt");
-		File textOutFile = new File(outTextFileBaseString + InputFileNumber + "/textOutOfProtiens"
-				+ "_" + InputFileNumber + ".txt");
-		File blastDataInFile = new File(proteinDataInFileString + InputFileNumber + "/blastResult_" + InputFileNumber + ".xml");
-		File blastAnnotationsInFile = new File(proteinDataInFileString + InputFileNumber + "/annot_Seqs_" + InputFileNumber + ".txt");
+		inSequencesFile = new File (inSequencesFileBaseString + inputFileNumber + ".txt");
+		proteinsOutFile = new File(proteinsOutFileBaseString + inputFileNumber + "/proteinsOut_" + inputFileNumber + ".bin");
+		outFile = new File(outFileBaseString + inputFileNumber + "/outSource_" + inputFileNumber + ".txt");
+		File threadLogFile = new File(proteinsOutFileBaseString + inputFileNumber + "/ThreadLog_" + inputFileNumber + ".txt");
+		File textOutFile = new File(outTextFileBaseString + inputFileNumber + "/textOutOfProtiens"
+				+ "_" + inputFileNumber + ".txt");
+		File blastDataInFile = new File(proteinDataInFileString + inputFileNumber + "/blastResult_" + inputFileNumber + ".xml");
+		File blastAnnotationsInFile = new File(proteinDataInFileString + inputFileNumber + "/annot_Seqs_" + inputFileNumber + ".txt");
 		
 		Map<String, String> goAnnotationLocations = new HashMap<String, String>();
 		LocationLoader loader = new LocationLoader();
@@ -183,13 +185,14 @@ public class ChokedWebInterrogator{
 							}//if eValue of current accession (probability of hit being random) is lower than the threshold probability (eValue)
 						}//while there are accessions for this protein that have not been data mined
 					}//if protein has at least one accession id and therefore needs processing
-					else{
-						currentProtien.setProcessed(true);  //fully processed by this point
-						SingleLock lock = SingleLock.getInstance();
-						synchronized(lock){
-							oos.writeObject(currentProtien);
-						}
-					}//else no further processing required
+					
+					//output protein objects whether it was processed or not
+					currentProtien.setProcessed(true);  //fully processed by this point
+					SingleLock lock = SingleLock.getInstance();
+					synchronized(lock){
+						oos.writeObject(currentProtien);
+					}//synchronized
+					
 				}
 				catch(UnreachableBrowserException ube){
 					//oneProteinWorkerThread.interrupt();

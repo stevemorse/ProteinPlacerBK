@@ -135,8 +135,28 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 						return driver.findElement(By.name("term"));
 						}});
 			}
+			
 			catch(NoSuchElementException nsee){
-				done = false;
+				//if not find by name try find by id
+				if(driver.findElements(By.id("term")).size() != 0){
+					try{
+						inputTextFeildElement = driver.findElement(By.id("term"));
+						done = true;
+					} catch(NoSuchElementException nsee2){
+						synchronized(threadLogFile){
+							try {
+								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+							} catch (IOException ioe) {
+								System.out.println("error opening file for append: " + ioe.getMessage());
+								ioe.printStackTrace();
+							}//catch
+							threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " fails to find input element by name or id to put accession: " + accession);
+							threadLogWriter.flush();
+							threadLogWriter.close();
+						}//synchronized
+						done = false;
+					}//catch nsee2
+				}//catch nsee
 			}
 			catch(ElementNotVisibleException enve){
 				done = false;
@@ -144,8 +164,35 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 		}while(!done);
 		
 		//enter accession string into protein page search box and submit query
-		inputTextFeildElement.sendKeys(accession);
-		inputTextFeildElement.submit();
+		int inputTextFeildCounter = 0;
+		while(driver.getCurrentUrl().compareToIgnoreCase(proteinPageUrl) == 0){
+			inputTextFeildCounter++;
+			if(inputTextFeildElement.getAttribute("value").compareToIgnoreCase(accession) != 0){
+				inputTextFeildElement.sendKeys(accession);
+			}//fill input text field if not yet filled with accession value
+			//invoke slight delay to allow sending keys to complete
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException ie) {
+				System.out.println("InterruptedException: " + ie.getMessage());
+				ie.printStackTrace();
+			}
+			inputTextFeildElement.submit();
+			//didn't work first time...make note of this in the threadlog
+			if(inputTextFeildCounter > 1){ 
+				synchronized(threadLogFile){
+					try {
+						threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+					} catch (IOException ioe) {
+						System.out.println("error opening file for append: " + ioe.getMessage());
+						ioe.printStackTrace();
+					}//catch
+					threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " fails to submit accession: " + accession + " to input element, loop count is: " + inputTextFeildCounter + " input feild is: " + inputTextFeildElement.getAttribute("value"));
+					threadLogWriter.flush();
+					threadLogWriter.close();
+				}//synchronized
+			}//if(inputTextFeildCounter > 1)
+		}//while driver still on splash page
 		
 		//get and process genebank text for the protein accession string corresponds to
 		//String source = driver.getPageSource();	
