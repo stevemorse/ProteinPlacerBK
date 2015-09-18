@@ -67,7 +67,7 @@ public class Protein extends Sequence{
 	 * makes a string of all annotations in key/value form
 	 * @return a string for use in toString
 	 */
-	public String listAllAnnotations(){
+	public synchronized String listAllAnnotations(){
 		String annotationStr = "";
 		if(annotations != null){
 			Iterator<Map.Entry<String, String>> mapIterator = annotations.entrySet().iterator();
@@ -82,7 +82,7 @@ public class Protein extends Sequence{
 		return annotationStr;
 	}
 	
-	public String listAllProteinSequences(){
+	public synchronized String listAllProteinSequences(){
 		String proteinSequenceStr = "";
 		int proteinCount = 0;
 		if(proteinSequences != null){
@@ -98,7 +98,7 @@ public class Protein extends Sequence{
 		return proteinSequenceStr;
 	}
 
-	public String toString(){
+	public synchronized String toString(){
 		return "Protien [sequence= " +  sequence
 		+ ", proteinSequences = " + listAllProteinSequences()
 		+ ", processed = " + processed
@@ -112,58 +112,58 @@ public class Protein extends Sequence{
 		+ expressionPointMLS + "]\n" + listAllAnnotations();	
 	}
 
-	public List<String> getProteinSequences() {
+	public synchronized List<String> getProteinSequences() {
 		return proteinSequences;
 	}
 
-	public void setProteinSequences(List<String> proteinsequence) {
+	public synchronized void setProteinSequences(List<String> proteinsequence) {
 		this.proteinSequences = proteinsequence;
 	}
 
-	public boolean isProcessed() {
+	public synchronized boolean isProcessed() {
 		return processed;
 	}
 
-	public void setProcessed(boolean processed) {
+	public synchronized void setProcessed(boolean processed) {
 		this.processed = processed;
 	}
 
-	public String getErrorMode() {
+	public synchronized String getErrorMode() {
 		return errorMode;
 	}
 
-	public void setErrorMode(String errorMode) {
+	public synchronized void setErrorMode(String errorMode) {
 		this.errorMode = errorMode;
 	}
-	public String getBlast2GoFileName() {
+	public synchronized String getBlast2GoFileName() {
 		return blast2GoFileName;
 	}
 
-	public void setBlast2GoFileName(String blast2GoFileName) {
+	public synchronized void setBlast2GoFileName(String blast2GoFileName) {
 		this.blast2GoFileName = blast2GoFileName;
 	}
 	
-	public Map<String, String> getAnnotations() {
+	public synchronized Map<String, String> getAnnotations() {
 		return annotations;
 	}
 
-	public void setAnnotations(Map<String, String> annotations) {
+	public synchronized void setAnnotations(Map<String, String> annotations) {
 		this.annotations = annotations;
 	}
 
-	public Map<String, String> getAllFoundRegionsInText() {
+	public synchronized Map<String, String> getAllFoundRegionsInText() {
 		return allFoundRegionsInText;
 	}
 
-	public void setAllFoundRegionsInText(Map<String, String> allFoundRegionsInText) {
+	public synchronized void setAllFoundRegionsInText(Map<String, String> allFoundRegionsInText) {
 		this.allFoundRegionsInText = allFoundRegionsInText;
 	}
 
-	public boolean isGotGenebank() {
+	public synchronized boolean isGotGenebank() {
 		return gotGenebank;
 	}
 
-	public void setGotGenebank(boolean gotGenebank) {
+	public synchronized void setGotGenebank(boolean gotGenebank) {
 		this.gotGenebank = gotGenebank;
 	}
 	

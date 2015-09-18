@@ -60,7 +60,7 @@ public class SingleGoAnchorRunnable extends PriorityRunnable{
 		this.url = url;
 		this.currentGoAnchorString = currentGoAnchorString;
 		this.GoAnnotationLocations = GoAnnotationLocations;
-		this.TypeOfGoLookup = TypeOfGoLookup;
+		this.TypeOfGoLookup = "";
 		this.threadLogFile = threadLogFile;
 		this.debug = debug;
 	}
@@ -169,6 +169,8 @@ public class SingleGoAnchorRunnable extends PriorityRunnable{
 				currentProtein.setExpressionPointGOText(nameTextString);
 			}//if(cellLocationGOCodes.contains(currentGoAnchorString)
 		}//if TypeOfGoLookup
+		
+		
 		else if (TypeOfGoLookup.compareTo("amigo") == 0){	//quick GO web interface
 			
 			//get the block element that contains all ami go links from the ami go page
@@ -177,6 +179,14 @@ public class SingleGoAnchorRunnable extends PriorityRunnable{
 			boolean done = true;
 			do{
 				driver.get(url);
+				
+				//invoke slight delay to allow page to render
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException ie) {
+					System.out.println("InterruptedException: " + ie.getMessage());
+					ie.printStackTrace();
+				}
 				
 				final Wait<WebDriver> waitDriver = new FluentWait<WebDriver>(driver)
 					       .withTimeout(30, java.util.concurrent.TimeUnit.SECONDS)

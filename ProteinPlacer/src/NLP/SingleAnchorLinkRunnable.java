@@ -16,6 +16,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.ElementNotVisibleException;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -35,7 +36,7 @@ import ThreadPools.TheSinglePriorityThreadPool;
  * Processes a single http link (accession) corresponding to a putative match returned 
  * from the Blast search performed on the protein's sequence (if it was of 
  * lower eValue than threshold).  The run method modifies a StringBuilder parameter as
- * an effective return value which holds the region the protien is thought to be
+ * an effective return value which holds the region the protein is thought to be
  * expressed according to this accession or "not found" if no region data is mined
  * for this accession.
  */
@@ -538,11 +539,17 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 						synchronized(threadLogFile){
 							try {
 								threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+							}	catch(WebDriverException wbe)	{
+								System.out.println("error attemting to call GO anchor thread: " + wbe.getMessage());
+								threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + 
+										" ERROR: fails to spawn GO anchor thread for url: " + currentGoAnchorURLString);
+								wbe.printStackTrace();
 							} catch (IOException ioe) {
 								System.out.println("error opening file for append: " + ioe.getMessage());
 								ioe.printStackTrace();
 							}//catch
-							threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " spawns GO anchor thread for url: " + currentGoAnchorURLString);
+							threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + 
+									" spawns GO anchor thread for url: " + currentGoAnchorURLString);
 							threadLogWriter.flush();
 							threadLogWriter.close();
 						}//synchronized
@@ -637,11 +644,26 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 	 * @param debug	Verbose flag.
 	 */
 	public void processGoAnchor(Protein currentProtein, String url, String currentGoAnchorString, 
-			Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, File threadLogFile, boolean debug) throws org.openqa.selenium.WebDriverException{
+			Map<String, String> GoAnnotationLocations, String TypeOfGoLookup, File threadLogFile, boolean debug) throws org.openqa.selenium.WebDriverException {
 		//GoAnchorLinkThreadGateway.getInstance();
 		//GoAnchorLinkThreadGateway.getAnchorLinkThread(currentProtein, url, currentGoAnchorString, GoAnnotationLocations, TypeOfGoLookup, debug);
 		TheSinglePriorityThreadPool.getInstance();
 		TheSinglePriorityThreadPool.getGoAnchorLinkThread(currentProtein, url, currentGoAnchorString, GoAnnotationLocations,/* TypeOfGoLookup,*/ threadLogFile, debug);
+		
+		long threadId = Thread.currentThread().getId();
+		String threadName = Thread.currentThread().getName();
+		PrintWriter threadLogWriter = null;
+		synchronized(threadLogFile){
+			try {
+				threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+			} catch (IOException ioe) {
+				System.out.println("error opening file for append: " + ioe.getMessage());
+				ioe.printStackTrace();
+			}//catch
+			threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " is in processGoAnchor after spawn call");
+			threadLogWriter.flush();
+			threadLogWriter.close();
+		}//synchronized(writeToThreadLogLock)
 	}//processGoAnchor
 	
 }//class

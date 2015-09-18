@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.remote.UnreachableBrowserException;
 
+import ThreadPools.PriorityRunnable;
+import ThreadPools.PriorityFuture;
 import ThreadPools.TheSinglePriorityThreadPool;
 import protein.Protein;
 import utils.FileCharReader;
@@ -47,7 +49,7 @@ public class ChokedWebInterrogator{
 	private static String proteinDataInFileString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	private boolean debug = true;
 	List<Protein> proteinList = new ArrayList<Protein>();
-	private int processOneProteinThreads = 0;
+	//private int processOneProteinThreads = 0;
 	private File inSequencesFile = null;
 	private File proteinsOutFile = null;
 	private File outFile = null;
@@ -61,8 +63,8 @@ public class ChokedWebInterrogator{
 	 */
 	public ChokedWebInterrogator(List<Protein> proteinList, int threads, int inputFileNumber, boolean debug){
 		this.debug = debug;
-		processOneProteinThreads = threads;
-		inputFileNumber = inputFileNumber;
+		//processOneProteinThreads = threads;
+		this.inputFileNumber = inputFileNumber;
 		
 	}
 	
@@ -224,12 +226,17 @@ public class ChokedWebInterrogator{
 			ioe.printStackTrace();
 		}
 	    
+	    //need to spawn SingleGoAnchor threads from running tasks b/f shutdown
+	    TheSinglePriorityThreadPool.getInstance().invokeAll();
+	    
+	    //shut it down
 	    TheSinglePriorityThreadPool.getInstance().shutdown();
 	    
 	    System.out.println("threadpool is shutdown = " + TheSinglePriorityThreadPool.getInstance().isShutDown());	   
 	   
+	    //wait while it shuts down
 	    while(!TheSinglePriorityThreadPool.getInstance().awaitTermination(1000L, TimeUnit.SECONDS)){
-	    	System.out.println("wait 1000 seconds for all tasks to terminate");
+	    	System.out.println("wait 1000 seconds in second loop for all tasks to terminate");
 	    }//while not all threads terminated
 	    	
 	    windupStats(outFile,threadLogFile);
@@ -483,6 +490,8 @@ public class ChokedWebInterrogator{
 				threadLogWriter.println("number of proteins with error mode replaced: " + numReplaced);
 				threadLogWriter.println("number of proteins with error mode anchor: " + numAnchor);
 				threadLogWriter.println("number of proteins not classified: " + numNotClassified);
+				threadLogWriter.println("number of anchor threads submitted: " + TheSinglePriorityThreadPool.getNumAnchorLinksSpwned());
+				threadLogWriter.println("number of GO anchor threads submitted: " + TheSinglePriorityThreadPool.getNumGoAnchorLinksSpwned());
 				threadLogWriter.close();
 			} catch (IOException ioe) {
 				System.err.println("error opening output stream: " + ioe.getMessage());

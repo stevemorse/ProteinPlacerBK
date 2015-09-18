@@ -30,7 +30,7 @@ public class Sequence implements Serializable{
 	}
 	
 	@Override
-	public String toString() {
+	public synchronized String toString() {
 		return "Sequence [sequence=" + sequence + ", isPlacedByText="
 				+ isPlacedByText + ", isPlacedByExpandedTerms="
 				+ isPlacedByGOTerms + ", isPlacedByRBS=" + isPlacedByRBS
@@ -41,60 +41,58 @@ public class Sequence implements Serializable{
 				+ expressionPointMLS + "]";
 	}
 	
-	public String getSequence() {
+	public synchronized String getSequence() {
 		return sequence;
 	}
-
-	public void setSequence(String sequence) {
+	public synchronized void setSequence(String sequence) {
 		this.sequence = sequence;
-	}
-	
-	public boolean isPlacedByText() {
+	}	
+	public synchronized boolean isPlacedByText() {
 		return isPlacedByText;
 	}
-	public void setPlacedByText(boolean isPlacedByText) {
+	public synchronized void setPlacedByText(boolean isPlacedByText) {
 		this.isPlacedByText = isPlacedByText;
 	}
-	public boolean isPlacedByGOTerms() {
+	public synchronized boolean isPlacedByGOTerms() {
 		return isPlacedByGOTerms;
 	}
-	public void setPlacedByGOTerms(boolean isPlacedByExpandedTerms) {
+	public synchronized void setPlacedByGOTerms(boolean isPlacedByExpandedTerms) {
 		this.isPlacedByGOTerms = isPlacedByExpandedTerms;
 	}
-	public boolean isPlacedByRBS() {
+	public synchronized boolean isPlacedByRBS() {
 		return isPlacedByRBS;
 	}
-	public void setPlacedByRBS(boolean isPlacedByRBS) {
+	public synchronized void setPlacedByRBS(boolean isPlacedByRBS) {
 		this.isPlacedByRBS = isPlacedByRBS;
 	}
-	public boolean isPlacedByMLS() {
+	public synchronized boolean isPlacedByMLS() {
 		return isPlacedByMLS;
 	}
-	public void setPlacedByMLS(boolean isPlacedByMLS) {
+	public synchronized void setPlacedByMLS(boolean isPlacedByMLS) {
 		this.isPlacedByMLS = isPlacedByMLS;
 	}
-	public String getExpressionPointText() {
+	public synchronized String getExpressionPointText() {
 		return expressionPointText;
 	}
-	public void setExpressionPointText(String expressionPointText) {
+	public synchronized void setExpressionPointText(String expressionPointText) {
 		this.expressionPointText = expressionPointText;
 	}
-	public String getExpressionPointGoText() {
+	public synchronized String getExpressionPointGoText() {
 		return expressionPointGOText;
 	}
-	public void setExpressionPointGOText(String expressionPointExpandedText) {
+	public synchronized void setExpressionPointGOText(String expressionPointExpandedText) {
 		this.expressionPointGOText = expressionPointExpandedText;
 	}
-	public String getExpressionPointRBS() {
+	public synchronized String getExpressionPointRBS() {
 		return expressionPointRBS;
 	}
-	public void setExpressionPointRBS(String expressionPointRBS) {
+	public synchronized void setExpressionPointRBS(String expressionPointRBS) {
 		this.expressionPointRBS = expressionPointRBS;
 	}
-	public String getExpressionPointMLS() {
+	public synchronized String getExpressionPointMLS() {
 		return expressionPointMLS;
 	}
-	public void setExpressionPointMLS(String expressionPointMLS) {
+	public synchronized void setExpressionPointMLS(String expressionPointMLS) {
 		this.expressionPointMLS = expressionPointMLS;
 	}
 	

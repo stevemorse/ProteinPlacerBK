@@ -11,7 +11,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @param <T>
  */
-class PriorityFuture<T> implements RunnableFuture<T> {
+public class PriorityFuture<T> implements RunnableFuture<T> {
 
     private RunnableFuture<T> src;
     private int priority;
