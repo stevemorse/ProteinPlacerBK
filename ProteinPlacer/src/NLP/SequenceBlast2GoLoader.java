@@ -43,8 +43,11 @@ public void getSequences(File inSequencesFile, List<Protein> proteinList){
 			sequence = sequence.replaceAll("consensus_sequence", "");
 			sequence = sequence.replaceAll("Locus.*Length","");
 			sequence = sequence.replaceAll("_\\d++_?", "");
+			sequence = sequence.replaceAll("No_Hits_Assembly_", "");
 			sequence = sequence.trim();
+			System.out.println("sequence is: " + sequence);
 			int beginSequence = seqs[seqCounter].indexOf(sequence);
+			System.out.println(seqs[seqCounter] + " length = " + seqs[seqCounter].length() + " index of seq = " + beginSequence); 
 			String blast2GoFileName = seqs[seqCounter].substring(0,beginSequence);
 			blast2GoFileName = blast2GoFileName.trim();
 			/*
@@ -52,7 +55,7 @@ public void getSequences(File inSequencesFile, List<Protein> proteinList){
 				blast2GoFileName = blast2GoFileName.replace("/", "--");
 			}
 			*/
-			//System.out.println("blast2GoFileName: " + blast2GoFileName + "\nsequence: " + sequence);
+			System.out.println("blast2GoFileName: " + blast2GoFileName + "\nsequence: " + sequence);
 			SequenceList.add(sequence);
 			Protein currentProtein = new Protein(sequence,"GO",blast2GoFileName);
 			proteinList.add(currentProtein);

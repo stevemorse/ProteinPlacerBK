@@ -14,6 +14,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -103,6 +104,7 @@ public class ChokedWebInterrogator{
 		//get GO annotations
 		Map<String, Map<String, String>> goAnnotations = getGOAnnotations(blastAnnotationsInFile);
 		
+		
 		PrintWriter threadLogWriter = null;
 		FileOutputStream fout = null;
 		ObjectOutputStream oos = null;
@@ -131,21 +133,6 @@ public class ChokedWebInterrogator{
 			trim(currentAccessionIds, thresholdEValue);
 			//load GO annotations
 			currentProtien.setAnnotations(goAnnotations.get(currentProtien.getBlast2GoFileName()));
-	
-			//if go annotation include a valid cell location, set it
-			if(currentProtien.getAnnotations() != null){
-				List<String> cellLocationGOCodes = new ArrayList<String>(goAnnotationLocations.keySet());
-				List<String> currentProteinGoCodes = new ArrayList<String>(currentProtien.getAnnotations().keySet());
-				ListIterator<String> currentProteinGoCodesLiter = currentProteinGoCodes.listIterator();
-				while(currentProteinGoCodesLiter.hasNext()){
-					String currentGoCode = 	currentProteinGoCodesLiter.next();
-					if(cellLocationGOCodes.contains(currentGoCode) && !currentProtien.isPlacedByGOTerms()){
-						currentProtien.setPlacedByGOTerms(true);
-						currentProtien.setExpressionPointGOText(currentProtien.getAnnotations().get(currentGoCode));
-					}//if(cellLocationGOCodes.contains(currentGoAnchorString)
-				}//while currentProteinGoCodesLiter
-			}//annotation not null
-			//Thread oneProteinWorkerThread = null;
 			currentDone = true;
 			do{
 				try{
@@ -181,7 +168,7 @@ public class ChokedWebInterrogator{
 								StringBuilder region = new StringBuilder("");
 								//theAnchorLinkThreadGateway.getAnchorLinkThread(currentProtien, accession, region, goAnnotationLocations, textOutFile, firstAccession, finished);
 								TheSinglePriorityThreadPool.getAnchorLinkThread(currentProtien, accession, region, 
-										goAnnotationLocations, textOutFile, threadLogFile, firstAccession, firstAccession);
+										goAnnotationLocations, textOutFile, threadLogFile, firstAccession, debug);
 								firstAccession = false;
 								currentProtien.getAllFoundRegionsInText().put(accession,region.toString());
 							}//if eValue of current accession (probability of hit being random) is lower than the threshold probability (eValue)
@@ -190,26 +177,21 @@ public class ChokedWebInterrogator{
 					
 					//output protein objects whether it was processed or not
 					currentProtien.setProcessed(true);  //fully processed by this point
+					/*
 					SingleLock lock = SingleLock.getInstance();
 					synchronized(lock){
 						oos.writeObject(currentProtien);
 					}//synchronized
+					*/
 					
 				}
 				catch(UnreachableBrowserException ube){
-					//oneProteinWorkerThread.interrupt();
 					currentDone = false;
-				}
+				}//catch ube
 				catch(org.openqa.selenium.WebDriverException wbe){
-					//oneProteinWorkerThread.interrupt();
 					currentDone = false;
-				}catch (FileNotFoundException fnfe) {
-					System.err.println("error opening output file: " + fnfe.getMessage());
-					fnfe.printStackTrace();
-				} catch (IOException ioe) {
-					System.err.println("error opening output stream: " + ioe.getMessage());
-					ioe.printStackTrace();
-				}
+				
+				}//catch block
 			}while(!currentDone); //retry current protein thread if browser failure occurs in SingleAnchorThreadRunner
 			
 			//finished = true; //set for one loop only...test code against first protein only
@@ -238,8 +220,14 @@ public class ChokedWebInterrogator{
 	    while(!TheSinglePriorityThreadPool.getInstance().awaitTermination(1000L, TimeUnit.SECONDS)){
 	    	System.out.println("wait 1000 seconds in second loop for all tasks to terminate");
 	    }//while not all threads terminated
-	    	
+	    
+	    cleanNotMatched(proteinList);
+	    
+	    setGoLocations(proteinList, goAnnotationLocations);
+	    
 	    windupStats(outFile,threadLogFile);
+	    
+	    writeProteinObjectsToFile(proteinList);
 	    
 	    synchronized(threadLogFile){
 			try {
@@ -405,9 +393,52 @@ public class ChokedWebInterrogator{
 	}//trim
 	
 	/**
-	 * 
-	 * @param outFile
-	 * @param threadLogFile
+	 * ensures "NOT MATCED" constructor string was properly removed where matched sequences were found
+	 * @param proteinList
+	 */
+	private void cleanNotMatched(List<Protein> proteinList){
+		ListIterator<Protein> proteinListLiter = proteinList.listIterator();
+		Protein currentProtien = null;
+		while(proteinListLiter.hasNext()){
+			currentProtien = proteinListLiter.next();
+			synchronized(currentProtien){
+			if(currentProtien.getProteinSequences().size() > 1 && 
+					currentProtien.getProteinSequences().get(0).compareToIgnoreCase("NOT MATCHED") ==0){
+					//clean not matched if it's still there
+					currentProtien.getProteinSequences().remove(0);//remove "NOT MATCHED" constructor string
+					currentProtien.getProteinSequences().removeAll(Collections.singleton(null)); //fixs for ArrayList remove() shift to left bug
+					currentProtien.getProteinSequences().removeAll(Collections.singleton("NOT MATCHED"));
+					currentProtien.getProteinSequences().removeAll(Collections.singleton(""));
+				}//if
+			}//Synchronized	
+		}//while(proteinListLiter.hasNext()
+	}//cleanNotMatched
+	
+	private void setGoLocations(List<Protein> proteinList, Map<String, String> goAnnotationLocations){
+		//if go annotations include a valid cell location, set it
+		ListIterator<Protein> proteinListLiter = proteinList.listIterator();
+		Protein currentProtien = null;
+		while(proteinListLiter.hasNext()){
+			currentProtien = proteinListLiter.next();
+			if(currentProtien.getAnnotations() != null){
+				List<String> cellLocationGOCodes = new ArrayList<String>(goAnnotationLocations.keySet());
+				List<String> currentProteinGoCodes = new ArrayList<String>(currentProtien.getAnnotations().keySet());
+				ListIterator<String> currentProteinGoCodesLiter = currentProteinGoCodes.listIterator();
+				while(currentProteinGoCodesLiter.hasNext()){
+					String currentGoCode = 	currentProteinGoCodesLiter.next();
+					if(cellLocationGOCodes.contains(currentGoCode) && !currentProtien.isPlacedByGOTerms()){
+						currentProtien.setPlacedByGOTerms(true);
+						currentProtien.setExpressionPointGOText(currentProtien.getAnnotations().get(currentGoCode));
+					}//if(cellLocationGOCodes.contains(currentGoAnchorString)
+				}//while currentProteinGoCodesLiter
+			}//annotation not null
+		}//while proteinListLiter
+	}//setGoLocation
+	
+	/**
+	 * produces final output of effects of protein data gathering operations
+	 * @param outFile where to print the proteins
+	 * @param threadLogFile where to print the effects of thread operations
 	 */
 	private void windupStats(File outFile, File threadLogFile) {
 		//get the processed proteins from the outFile
@@ -499,5 +530,35 @@ public class ChokedWebInterrogator{
 			}//last catch
 		}//synchronized
 	}//windupStats
+	
+	private void writeProteinObjectsToFile(List<Protein> proteinList){
+
+		FileOutputStream fout = null;
+		ObjectOutputStream oos = null;
+		try {
+			fout = new FileOutputStream(proteinsOutFile);
+			oos = new ObjectOutputStream(fout);
+			//loop through proteins and write to file
+			ListIterator<Protein> proteinListLiter = proteinList.listIterator();
+			Protein currentProtien = null;
+			int protienCount = 0;
+			while(proteinListLiter.hasNext()){
+				currentProtien = proteinListLiter.next();
+				protienCount++;
+				SingleLock lock = SingleLock.getInstance();
+				synchronized(lock){
+					oos.writeObject(currentProtien);
+				}//synchronized
+			}//while not finished writing to file
+		System.out.println("number of proteins written to file: " + protienCount);	
+		} catch (FileNotFoundException fnfe) {
+			System.err.println("error opening output file: " + fnfe.getMessage());
+			fnfe.printStackTrace();
+		} catch (IOException ioe) {
+			System.err.println("error opening output stream: " + ioe.getMessage());
+			ioe.printStackTrace();
+		}
+		
+	}
 	
 }//class

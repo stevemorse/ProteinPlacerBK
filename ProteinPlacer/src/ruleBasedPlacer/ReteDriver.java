@@ -2,7 +2,9 @@ package ruleBasedPlacer;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import protein.Protein;
 
@@ -13,9 +15,11 @@ public class ReteDriver {
 	//private static File proteinsInFile = new File ("/home/steve/Desktop/ProteinPlacer/data/goldResults.bin");
 	
 	public static void main(String[] args){
-		List<Protein> proteinList = new ArrayList<Protein>();
+		Map<Integer, List<Protein>> allProteins = new HashMap<Integer, List<Protein>>();
+		//List<Protein> proteinList = new ArrayList<Protein>();
 		ReteProcessor rp = new ReteProcessor();
-		proteinList = rp.loadProteins(proteinsInFile);
-		rp.processProteins(proteinList);	
+		allProteins = rp.loadProteins(proteinsInFile);
+		System.out.println("allProteins size is:" + allProteins.size());
+		rp.processProteins(allProteins);	
 	}//main
 }

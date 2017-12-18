@@ -11,8 +11,10 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
 import protein.Protein;
 import jess.*;
@@ -27,8 +29,10 @@ public class ReteProcessor {
 	private static int secretory_pathwayCount = 0;
 	private static int er_retentionCount = 0;
 	private static int peroxisomeCount = 0;
+	private boolean debug = true;
 
-	public void processProteins(List<Protein> proteinList){
+	public void processProteins(Map<Integer, List<Protein>> proteinListMap){
+		Map<Integer, List<Protein>>  proteinsOutListMap = new HashMap<Integer, List<Protein>>  ();
 		Protein currentProtein = null;
 		Rete engine = new Rete();
 		try {
@@ -68,125 +72,148 @@ public class ReteProcessor {
 			ioe.printStackTrace();
 		}
 		
-		ListIterator<Protein> proteinListIter = proteinList.listIterator();
-		while(proteinListIter.hasNext()){
-			currentProtein = proteinListIter.next();
-			//if matched then define a rete instance of the protein in the rete engine
-			if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
-				int currentFactId = 0;
-				try {
-					Value currentFact = engine.definstance("Protein", currentProtein, false);
-					currentFactId = currentFact.intValue(engine.getGlobalContext());
-					System.out.println("fact no. for: " + currentProtein.getBlast2GoFileName() + " is: " + currentFactId);
-					engine.eval("(bind ?id " + currentFactId + " )");
-					//engine.batch("C:\\Users\\Steve\\workspace2\\ProteinPlacer\\src\\ruleBasedPlacer\\rules.clp");
-				} catch (JessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			
-			
-				//apply motif tests for cell locations to the protein
-				if(checkSecretoryPathway(currentProtein) && !checkChloroplastDinos(currentProtein)){
-					try {
-						engine.assertString("(secretory_pathway)");
-						secretory_pathwayCount++;
-						//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"secretory_pathway\"))");
-					} catch (JessException je) {
-						System.out.println("jess fail in checkSecretoryPathway " + je.getMessage());
-						je.printStackTrace();
-					}
-				}
-				
-				if(checkNucleus(currentProtein)){
-					try {
-						engine.assertString("(nucleus)", engine.getGlobalContext());
-						nucleusCount++;
-						//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"nucleus\"))");
-					} catch (JessException je) {
-						System.out.println("jess fail in checkNucleus " + je.getMessage());
-						je.printStackTrace();
-					}
-				}
-				
-				if(checkMitochondrion(currentProtein)){
-					try {
-						engine.assertString("(mitochondrion)");
-						mitochondrionCount++;
-						//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"mitochondrion\"))");
-					} catch (JessException je) {
-						System.out.println("jess fail in checkMitochondrion " + je.getMessage());
-						je.printStackTrace();
-					}
-				}
-				
-				if(checkChloroplastPlant(currentProtein)){
-					try {
-						engine.assertString("(chloroplast_plant)");
-						chloroplast_plantCount++;
-						//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"chloroplast\"))");
-					} catch (JessException je) {
-						System.out.println("jess fail in checkChloroplastPlant " + je.getMessage());
-						je.printStackTrace();
-					}
-				}
-				
-				if(checkChloroplastDinos(currentProtein)){
-					try {
-						engine.assertString("(chloroplast_dinos)");
-						chloroplast_dinosCount++;
-						//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"chloroplast\"))");
-					} catch (JessException je) {
-						System.out.println("jess fail in checkChloroplastDinos " + je.getMessage());
-						je.printStackTrace();
-					}
-				}
-				
-				if(checkERRetention(currentProtein)){
-					try {
-						engine.assertString("(er_retention)");
-						er_retentionCount++;
-						/*
-						if(checkSecretoryPathway(currentProtein)){
-							engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"endoplasmic reticulum\"))");
-						*/
-					} catch (JessException je) {
-						System.out.println("jess fail in checkERRetention " + je.getMessage());
-						je.printStackTrace();
-					}
-				}
+		int numNotMatched = 0;
+		int proteinCount = 0;
 		
-				
-				if(checkPeroxisome(currentProtein)){
+		for(int fileCount = 0; fileCount < proteinListMap.size(); fileCount++){
+			List<Protein> proteinList = new ArrayList<Protein>();
+			List<Protein> proteinsOutList = new ArrayList<Protein>();
+			proteinList = proteinListMap.get(fileCount);
+			ListIterator<Protein> proteinListIter = proteinList.listIterator();
+			System.out.println("ProteinList " + fileCount + " has " + proteinList.size() + " proteins");
+			while(proteinListIter.hasNext()){
+				proteinCount++;
+				currentProtein = proteinListIter.next();
+				//if matched then define a rete instance of the protein in the rete engine
+				if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") == 0){
+				//if(currentProtein.getProteinSequences().size() == 1){ //bug fix for not matched flag left in
+					if(debug){
+						System.out.println("PROTEIN " + proteinCount + " IS NOT MATCHED WITH " + currentProtein.getProteinSequences().size() + " SEQUENCES");
+					}//if debug
+					numNotMatched++;
+				}//if not matched
+				//else is matched so process
+				else{
+					int currentFactId = 0;
 					try {
-						engine.assertString("(peroxisome)");
-						peroxisomeCount++;
-						//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"peroxisome\"))");
+						Value currentFact = engine.definstance("Protein", currentProtein, false);
+						currentFactId = currentFact.intValue(engine.getGlobalContext());
+						System.out.println("fact no. for: " + currentProtein.getBlast2GoFileName() + " is: " + currentFactId);
+						engine.eval("(bind ?id " + currentFactId + " )");
+						//engine.batch("C:\\Users\\Steve\\workspace2\\ProteinPlacer\\src\\ruleBasedPlacer\\rules.clp");
 					} catch (JessException je) {
-						System.out.println("jess fail in checkPeroxisome " + je.getMessage());
+						// TODO Auto-generated catch block
 						je.printStackTrace();
 					}
-				}//if checkPeroxisome
-			}//if protein sequence is matched
+				
+					//apply motif tests for cell locations to the protein
+					if(checkSecretoryPathway(currentProtein) && !checkChloroplastDinos(currentProtein)){
+						try {
+							engine.assertString("(secretory_pathway)");
+							secretory_pathwayCount++;
+							//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"secretory_pathway\"))");
+						} catch (JessException je) {
+							System.out.println("jess fail in checkSecretoryPathway " + je.getMessage());
+							je.printStackTrace();
+						}
+					}
+					
+					if(checkNucleus(currentProtein)){
+						try {
+							engine.assertString("(nucleus)", engine.getGlobalContext());
+							nucleusCount++;
+							//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"nucleus\"))");
+						} catch (JessException je) {
+							System.out.println("jess fail in checkNucleus " + je.getMessage());
+							je.printStackTrace();
+						}
+					}
+					
+					if(checkMitochondrion(currentProtein)){
+						try {
+							engine.assertString("(mitochondrion)");
+							mitochondrionCount++;
+							//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"mitochondrion\"))");
+						} catch (JessException je) {
+							System.out.println("jess fail in checkMitochondrion " + je.getMessage());
+							je.printStackTrace();
+						}
+					}
+					
+					if(checkChloroplastPlant(currentProtein)){
+						try {
+							engine.assertString("(chloroplast_plant)");
+							chloroplast_plantCount++;
+							//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"chloroplast\"))");
+						} catch (JessException je) {
+							System.out.println("jess fail in checkChloroplastPlant " + je.getMessage());
+							je.printStackTrace();
+						}
+					}
+					
+					if(checkChloroplastDinos(currentProtein)){
+						try {
+							engine.assertString("(chloroplast_dinos)");
+							chloroplast_dinosCount++;
+							//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"chloroplast\"))");
+						} catch (JessException je) {
+							System.out.println("jess fail in checkChloroplastDinos " + je.getMessage());
+							je.printStackTrace();
+						}
+					}
+					
+					if(checkERRetention(currentProtein)){
+						try {
+							engine.assertString("(er_retention)");
+							er_retentionCount++;
+							/*
+							if(checkSecretoryPathway(currentProtein)){
+								engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"endoplasmic reticulum\"))");
+							*/
+						} catch (JessException je) {
+							System.out.println("jess fail in checkERRetention " + je.getMessage());
+							je.printStackTrace();
+						}
+					}
 			
-			try {
-				engine.run();
-				engine.reset();
-			} catch (JessException je) {
-				System.out.println("jess fail in reseting facts " + je.getMessage());
-				je.printStackTrace();
-			}
-			
-			//print the processed protein to file
-			try {
-				oos.writeObject(currentProtein);
-			} catch (IOException ioe) {
-				System.out.println("problem writing protein to file: " + ioe.getMessage());
-				ioe.printStackTrace();
-			}
-		}//while proteinListIter
+					
+					if(checkPeroxisome(currentProtein)){
+						try {
+							engine.assertString("(peroxisome)");
+							peroxisomeCount++;
+							//engine.eval("(modify ?id (placedByRBS TRUE)(expressionPointRBS \"peroxisome\"))");
+						} catch (JessException je) {
+							System.out.println("jess fail in checkPeroxisome " + je.getMessage());
+							je.printStackTrace();
+						}
+					}//if checkPeroxisome
+				}//if protein sequence is matched
+				
+				try {
+					engine.run();
+					engine.reset();
+				} catch (JessException je) {
+					System.out.println("jess fail in reseting facts " + je.getMessage());
+					je.printStackTrace();
+				}
+				
+				proteinsOutList.add(currentProtein);
+				/*
+				//print the processed protein to file
+				try {
+					oos.writeObject(currentProtein);
+					
+				} catch (IOException ioe) {
+					System.out.println("problem writing protein to file: " + ioe.getMessage());
+					ioe.printStackTrace();
+				}
+				*/
+			}//while proteinListIter
+			proteinsOutListMap.put(fileCount, proteinsOutList);
+		}//for fileCount
 		
 		try {
+			oos.writeObject(proteinsOutListMap);
 			oos.close();
 		} catch (IOException ioe) {
 			System.out.println("problem closingfile: " + ioe.getMessage());
@@ -200,11 +227,14 @@ public class ReteProcessor {
 		System.out.println("secretory_pathwayCount: " + secretory_pathwayCount);
 		System.out.println("er_retentionCount: " + er_retentionCount);
 		System.out.println("peroxisomeCount: " + peroxisomeCount);
+		System.out.println("numNotMatched: " + numNotMatched);
 	}//processProteins
 	
 	public boolean checkNucleus(Protein currentProtein){
 		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+		//if(currentProtein.getProteinSequences().size() == 1){ //bug fix for not matched flag left in
 			String seq = currentProtein.getProteinSequences().get(0);
+			//String seq = currentProtein.getProteinSequences().get(1); //bug fix for not matched flag left in
 System.out.println("in checkNucleus seq is: " + seq);
 			int arginineOrLysine = 0;
 			for(int aminoAcidCount = 0; aminoAcidCount < seq.length(); aminoAcidCount++){
@@ -225,7 +255,9 @@ System.out.println("match in checkNucleus");
 	
 	public boolean checkMitochondrion(Protein currentProtein){
 		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+		//if(currentProtein.getProteinSequences().size() == 1){ //bug fix for not matched flag left in
 			String seq = currentProtein.getProteinSequences().get(0);
+			//String seq = currentProtein.getProteinSequences().get(1); //bug fix for not matched flag left in
 			String first20 = seq.substring(0,19);
 System.out.println("in checkMitochondrion first20 is: " + first20);
 			for(int aminoAcidCount = 0; aminoAcidCount < first20.length() -12; aminoAcidCount++){
@@ -252,7 +284,9 @@ System.out.println("match in checkMitochondrion");
 	
 	public boolean checkChloroplastPlant(Protein currentProtein){
 		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+		//if(currentProtein.getProteinSequences().size() == 1){ //bug fix for not matched flag left in
 			String seq = currentProtein.getProteinSequences().get(0);
+			//String seq = currentProtein.getProteinSequences().get(1); //bug fix for not matched flag left in
 			String first50 = seq.substring(0,49);
 System.out.println("in checkChloroplastPlant first50 is: " + first50);
 			int serineOrThreonine = 0;
@@ -272,7 +306,9 @@ System.out.println("match in checkChloroplastPlant");
 	
 	public boolean checkChloroplastDinos(Protein currentProtein){
 		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+		//if(currentProtein.getProteinSequences().size() == 1){ //bug fix for not matched flag left in
 			String seq = currentProtein.getProteinSequences().get(0);
+			//String seq = currentProtein.getProteinSequences().get(1); //bug fix for not matched flag left in
 			String first15 = seq.substring(0,14);
 System.out.println("in checkChloroplastDinos first15 is: " + first15);
 			int hydrophobic = 0;
@@ -310,7 +346,9 @@ System.out.println("match in checkChloroplastDinos");
 	
 	public boolean checkSecretoryPathway(Protein currentProtein){
 		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+		//if(currentProtein.getProteinSequences().size() == 1){ //bug fix for not matched flag left in
 			String seq = currentProtein.getProteinSequences().get(0);
+			//String seq = currentProtein.getProteinSequences().get(1); //bug fix for not matched flag left in
 			String first30 = seq.substring(0,29);
 System.out.println("in checkSecretoryPathway first30 is: " + first30);
 			int hydrophobic = 0;
@@ -343,7 +381,9 @@ System.out.println("match in checkSecretoryPathway");
 	
 	public boolean checkERRetention(Protein currentProtein){
 		if(currentProtein.getProteinSequences().get(0).compareTo("NOT MATCHED") != 0){
+		//if(currentProtein.getProteinSequences().size() == 1){ //bug fix for not matched flag left in
 			String seq = currentProtein.getProteinSequences().get(0);
+			//String seq = currentProtein.getProteinSequences().get(1); //bug fix for not matched flag left in
 			String last4 = seq.substring(seq.length()-4,seq.length());
 System.out.println("in checkERRetention last4 is: " + last4);
 			if(last4.compareTo("kdel") == 0){
@@ -370,7 +410,8 @@ System.out.println("match in checkPeroxisome");
 	}////method checkPeroxisome
 	
 	
-	public List<Protein> loadProteins (File proteinsInFile){
+	public Map <Integer, List<Protein>> loadProteins (File proteinsInFile){
+		Map <Integer, List<Protein>> proteinListMap = new HashMap <Integer, List<Protein>>();
 		List<Protein> proteinList = new ArrayList<Protein>();
 		Protein currentProtein = null;
 		
@@ -381,17 +422,19 @@ System.out.println("match in checkPeroxisome");
 			file = new FileInputStream(proteinsInFile);
 		    buffer = new BufferedInputStream(file);
 		    input = new ObjectInputStream (buffer);
+		    proteinListMap = (Map <Integer, List<Protein>>) input.readObject();
+		    /*
 			while(true){
 				currentProtein = (Protein) input.readObject();
 				proteinList.add(currentProtein);
 			}//while
+			*/
 		} catch(ClassNotFoundException cnfe){
 			System.out.println("class not found: " + cnfe.getMessage());
 		} catch(IOException ioe){
 			System.out.println("class not found: " + ioe.getMessage());
 		}
-		
 		System.out.println("number of proteins to process is: " + proteinList.size());
-		return proteinList;
+		return proteinListMap;
 	}//loadProteins
 }//ReteTester

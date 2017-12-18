@@ -56,8 +56,8 @@ public class Sequence implements Serializable{
 	public synchronized boolean isPlacedByGOTerms() {
 		return isPlacedByGOTerms;
 	}
-	public synchronized void setPlacedByGOTerms(boolean isPlacedByExpandedTerms) {
-		this.isPlacedByGOTerms = isPlacedByExpandedTerms;
+	public synchronized void setPlacedByGOTerms(boolean isPlacedByGOTerms) {
+		this.isPlacedByGOTerms = isPlacedByGOTerms;
 	}
 	public synchronized boolean isPlacedByRBS() {
 		return isPlacedByRBS;

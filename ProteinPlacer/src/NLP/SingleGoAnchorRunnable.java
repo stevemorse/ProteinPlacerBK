@@ -19,6 +19,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxProfile;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.remote.SessionNotFoundException;
 import org.openqa.selenium.support.ui.FluentWait;
@@ -122,9 +123,17 @@ public class SingleGoAnchorRunnable extends PriorityRunnable{
 		//see http://code.google.com/p/selenium/issues/detail?id=5061
 		//see http://stackoverflow.com/questions/16140865/unable-to-bind-to-locking-port-7054-within-45000-ms
 		final WebDriver driver;
+		FirefoxProfile prof = new FirefoxProfile();
+		//FirefoxProfile prof = profile.getProfile("default");
+		//prof.setPreference("browser.startup.homepage", proteinPageUrl);
+		//prof.setPreference("startup.homepage_welcome_url", proteinPageUrl);
+		//prof.setPreference("startup.homepage_welcome_url.additional", proteinPageUrl);
+		prof.setPreference("xpinstall.signatures.required", false);
+		prof.setPreference("toolkit.telemetry.reportingpolicy.firstRun", false);
 		//Object socketLock = new Object();
 		//synchronized(socketLock){
-		driver = new FirefoxDriver();
+		//driver = new FirefoxDriver();
+		driver = new FirefoxDriver(prof);
 			//driver = forceInit();
 			//driver = new FirefoxDriverWrapper();
 		//}//end synch block

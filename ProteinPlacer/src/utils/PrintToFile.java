@@ -14,6 +14,8 @@ import java.util.ListIterator;
 
 import protein.Protein;
 
+
+
 /**
  * Just prints a binary serialized protein file as a text file so 
  * that the results of processing can be browsed at leisure. 
@@ -21,8 +23,10 @@ import protein.Protein;
  * @version 1.0
  */
 public class PrintToFile {
-
-	private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/proteinsOut0Test.bin");
+	private static boolean debug = true;
+	//private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/proteinsOut0Test.bin");
+	//private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/allResults.bin");
+	private static File inFile = new File("/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_0/proteinsOut_0.bin");
 	private static File outFile = new File("/home/steve/Desktop/ProteinPlacer/data/proteinTextFile.txt");
 	
 	/**
@@ -59,10 +63,14 @@ public class PrintToFile {
 		ListIterator<Protein> proteinListLiter = proteinList.listIterator();
 		while(proteinListLiter.hasNext()){
 			Protein currentProtein = proteinListLiter.next();
+			if(debug){
+				System.out.println("number of sequences in current protein is: " + currentProtein.getProteinSequences().size());
+				System.out.println("current protein is: " + currentProtein.toString());
+			}//if(debug)
 			try {
 				fw.write("Protein:\n" + currentProtein.toString());
 			} catch (IOException e) {
-				System.out.println("error writein to file: " + e.getMessage());
+				System.out.println("error writing to file: " + e.getMessage());
 				e.printStackTrace();
 			}
 			
@@ -71,7 +79,7 @@ public class PrintToFile {
 		try {
 			fw.close();
 		} catch (IOException e) {
-			System.out.println("error writein to file: " + e.getMessage());
+			System.out.println("error closing to file: " + e.getMessage());
 			e.printStackTrace();
 		}
 		

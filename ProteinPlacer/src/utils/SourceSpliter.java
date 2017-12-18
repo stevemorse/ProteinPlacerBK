@@ -15,7 +15,7 @@ import java.util.ListIterator;
  * @version 1.0
  */
 public class SourceSpliter {
-	private static File sourceTextInFile = new File("/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_0/outSource_0.txt");
+	private static String sourceBaseString = "/home/steve/Desktop/ProteinPlacer/data/Blast2GoXML/results_";
 	static List<List<String>> split = null;
 	
 	/**
@@ -23,6 +23,10 @@ public class SourceSpliter {
 	 * @param args standard main runtime parameters
 	 */
 	public static void main (String[] args){
+		int fileNumberStart = 0;
+		File sourceTextInFile = new File(sourceBaseString + fileNumberStart + "/textOutOfProtiens_" +
+				fileNumberStart + ".txt");
+		
 		//load source text
 		char[] sourceInFileBuffer = new char[(int) sourceTextInFile.length()];
 		
@@ -53,6 +57,60 @@ public class SourceSpliter {
 		List<String> sourceProteinSequences = new ArrayList<String>();
 		List<String> sourceTexts = new ArrayList<String>();
 		
+		String[] proteins = sourcesStr.split("protein:");
+		for(int sourcesCount = 1; sourcesCount < proteins.length; sourcesCount++){
+			proteinList.add(proteins[sourcesCount]);
+		}
+		
+		ListIterator<String> proteinListIter = proteinList.listIterator();
+		int proteinCount = 0;
+		while(proteinListIter.hasNext()){
+			String current = proteinListIter.next();
+			System.out.println(current + "\n");
+			int sequenceBegin = current.indexOf("Protien [sequence= ");
+			sequenceBegin += "Protien [sequence= ".length();
+			int sequenceEnd = current.indexOf(",",sequenceBegin);
+			if(sequenceEnd == -1)
+			{
+				sequenceEnd = current.indexOf(" ",sequenceBegin);
+				if(sequenceEnd == -1){
+					sequenceEnd = current.indexOf("\\n",sequenceBegin);
+				}//if
+				
+			}//if
+			System.out.println("current:\n" + current);
+			System.out.println("sequenceBegin " + sequenceBegin + " sequenceEnd " + sequenceEnd + " for protein: " + proteinCount);
+			proteinCount++;
+			String sequence = current.substring(sequenceBegin, sequenceEnd);
+			sequence.trim();
+			System.out.println("sequnce is: " + sequence + "\n");
+			int sourceTextsBegin = current.indexOf("source and protien feature texts");
+			sourceTextsBegin += "source and protien feature texts".length();
+			String sourceText = current.substring(sourceTextsBegin);
+			sourceText.trim();
+			System.out.println("source text is: " + sourceText + "\n\n\n");
+			sourceTexts.add(sourceText);
+			sourceProteinSequences.add(sequence);	
+		}//while
+		
+		//load both lists into return list and send it back
+		splitSource.add(sourceProteinSequences);
+		splitSource.add(sourceTexts);
+		return splitSource;	
+	}
+	
+	/**
+	 * 
+	 * @param sourcesStr the string of source data of sequences and matched source feature text
+	 * @return  List<List<String>> of List of protein sequences and synchronous list of source texts
+	 */
+	public static List<List<String>> split (char[] sourceInFileBuffer){
+		List<List<String>> splitSource = new ArrayList<List<String>>();
+		List<String> proteinList = new ArrayList<String>();
+		List<String> sourceProteinSequences = new ArrayList<String>();
+		List<String> sourceTexts = new ArrayList<String>();
+		
+		String sourcesStr = new String(sourceInFileBuffer);
 		String[] proteins = sourcesStr.split("protein:");
 		for(int sourcesCount = 1; sourcesCount < proteins.length; sourcesCount++){
 			proteinList.add(proteins[sourcesCount]);

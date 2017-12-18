@@ -1,13 +1,16 @@
 package ruleBasedPlacer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import protein.Protein;
 
 public class ReteUnitTester {
 
 	public static void main(String[] args){
+		Map <Integer, List<Protein>> proteinListMap = new HashMap <Integer, List<Protein>>();
 		List<Protein> proteinList = new ArrayList<Protein>();
 		ReteProcessor rp = new ReteProcessor();
 		
@@ -154,8 +157,8 @@ public class ReteUnitTester {
 		proteinList.add(dp);
 		proteinList.add(dpg);
 		
-				
+		proteinListMap.put(0,proteinList);	
 		//run them through rete processor
-		rp.processProteins(proteinList);	
+		rp.processProteins(proteinListMap);	
 	}//main
 }

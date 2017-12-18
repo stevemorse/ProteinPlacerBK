@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -19,6 +20,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxProfile;
+import org.openqa.selenium.firefox.internal.ProfilesIni;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.remote.SessionNotFoundException;
 import org.openqa.selenium.support.ui.FluentWait;
@@ -115,9 +118,21 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 		final WebDriver driver;
 		//final FirefoxDriverWrapper driver = new FirefoxDriverWrapper();
 		
+		//fix for new firefox problem...startpage private browsing
+		//ProfilesIni profile = new ProfilesIni();
+		FirefoxProfile prof = new FirefoxProfile();
+		//FirefoxProfile prof = profile.getProfile("default");
+		//prof.setPreference("browser.startup.homepage", proteinPageUrl);
+		//prof.setPreference("startup.homepage_welcome_url", proteinPageUrl);
+		//prof.setPreference("startup.homepage_welcome_url.additional", proteinPageUrl);
+		prof.setPreference("xpinstall.signatures.required", false);
+		prof.setPreference("toolkit.telemetry.reportingpolicy.firstRun", false);
 		//Object socketLock = new Object();
 		//synchronized(socketLock){
-		driver = new FirefoxDriver();
+System.out.println("before driver instantion");
+		//driver = new FirefoxDriver();
+		driver = new FirefoxDriver(prof);
+System.out.println("after driver instantion");
 			//driver = forceInit();
 			//driver.open();
 		//}//end synch block
@@ -455,40 +470,66 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 				//String featureText = feature.getText();
 				List<String> cellLocationNames = new ArrayList<String>(GoAnnotationLocations.values());
 				ListIterator<String> cellLocationNamesLiter = cellLocationNames.listIterator();
-				while(cellLocationNamesLiter.hasNext()  && !matched){
+				while(cellLocationNamesLiter.hasNext()  && !matched){					
 					String cellLocationName = cellLocationNamesLiter.next();
 					String seperateName = " " + cellLocationName.toLowerCase() + " ";
 					if((featureText.toLowerCase()).contains((seperateName.toLowerCase()))){
 						foundRegion = cellLocationName;
 						matched = true;
 						System.out.println("MATCH FOUND IN FEATURES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!:");
+						//set found status and location in the protein itself
+						currentProtien.setPlacedByText(true);
+						currentProtien.setExpressionPointText(foundRegion); 
+						try {
+							threadLogWriter = new PrintWriter(new FileWriter(threadLogFile.getAbsoluteFile(), true));
+						} catch (IOException ioe) {
+							System.out.println("error opening file for append: " + ioe.getMessage());
+							ioe.printStackTrace();
+						}//catch
+						threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + "MATCH FOUND IN FEATURES!!!!!!!!!!!!:");
+						threadLogWriter.println("Thread Id: " + threadId + " with thread name: " + threadName + " placed by text in the region: " + foundRegion);
+						threadLogWriter.flush();
+						threadLogWriter.close();
 					}//if term in feature
 				}//while termsLiter
 			}//while featureElementsLiter
-			
-		
-		
 			//check KEYWORDS area of genbank text for location keywords if not found in features
-			if (matched = false){
+			if (matched == false){				
 				int keywordPosition = genbankText.indexOf("KEYWORDS") + "KEYWORDS".length();
-				int sourcePosition = genbankText.indexOf("SOURCE");
+				int sourcePosition = genbankText.indexOf("SOURCE", keywordPosition);
 				String keywordText = genbankText.substring(keywordPosition, sourcePosition);
-				List<String> cellLocationNames = new ArrayList<String>(GoAnnotationLocations.values());
-				ListIterator<String> termsLiter = cellLocationNames.listIterator();
-				while(termsLiter.hasNext()  && !matched){
-					String term = termsLiter.next();
-					if((keywordText.toLowerCase()).contains((term.toLowerCase()))){
-						foundRegion = term;
-						matched = true;
-						System.out.println("MATCH FOUND IN KEYWORDS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!:");
-					}//if term in KEYWORDS area
-				}//while termsLiter
-			}//if (matched = false)
-			
+				keywordText = keywordText.trim();
+				if(keywordText.compareToIgnoreCase(".") != 0  && keywordText.compareToIgnoreCase("RefSeq.") != 0){
+					List<String> cellLocationNames = new ArrayList<String>(GoAnnotationLocations.values());
+					ListIterator<String> termsLiter = cellLocationNames.listIterator();
+					while(termsLiter.hasNext()  && !matched){
+						String term = termsLiter.next();
+						if((keywordText.toLowerCase()).contains((term.toLowerCase()))){
+							foundRegion = term;
+							matched = true;
+							System.out.println("MATCH FOUND IN KEYWORDS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!:");
+							//set found status and location in the protein itself
+							currentProtien.setPlacedByText(true);
+							currentProtien.setExpressionPointText(foundRegion);
+						}//if term in KEYWORDS area
+					}//while termsLiter
+				}//if real keyword
+			}//if (matched == false)	
+
 			//extract and load protein sequence
 			if(firstDFLink){
-				currentProtien.getProteinSequences().remove(0);//remove "NOT MATCHED" constructor string
-			}
+				synchronized(currentProtien){		
+						currentProtien.getProteinSequences().remove(0);//remove "NOT MATCHED" constructor string
+						currentProtien.getProteinSequences().removeAll(Collections.singleton(null)); //fixs for ArrayList remove() shift to left bug
+						currentProtien.getProteinSequences().removeAll(Collections.singleton("NOT MATCHED"));
+						currentProtien.getProteinSequences().removeAll(Collections.singleton(""));
+				}//Synchronized	
+				if(debug){
+					System.out.println("REMOVED NOT MATCHED CONSTRUCTOR STRING");
+				}//if debug
+			}//if(firstDFLink)
+			
+			//load into list whether first accession or not
 			int originPosition = genbankText.indexOf("ORIGIN") + 6;
 			String originText = genbankText.substring(originPosition);
 			originText = originText.replaceAll("\\d", "");
@@ -502,6 +543,7 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 				System.out.println("proteinSequence is: " + originText);
 			}//if debug
 			
+System.out.println("Thread " + threadId + " after sequence load");			
 				
 			//extract all GO and GOA text spans in genbank text
 			List<String> goAssensionTextList = new ArrayList<String>();
@@ -509,7 +551,7 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 			for(int goTextsCount = 1; goTextsCount < goTexts.length; goTextsCount++){
 				String goAssensionText = goTexts[goTextsCount].substring(0,7);
 				goAssensionTextList.add(goAssensionText);
-			}
+			}//for go text spans
 			System.out.println("number of GO terms: " + goAssensionTextList.size());
 			
 			List<String> goAssensionQuickTextList = new ArrayList<String>();
@@ -517,7 +559,7 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 			for(int goATextsCount = 1; goATextsCount < goATexts.length; goATextsCount++){
 				String goAssensionText = goATexts[goATextsCount].substring(0,7);
 				goAssensionQuickTextList.add(goAssensionText);
-			}
+			}//for goATexts
 			System.out.println("number of GOA terms: " + goAssensionQuickTextList.size());
 			
 			//now that they are counted stick them all together to be processed
@@ -566,7 +608,7 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 		} catch (IOException e) {
 			System.out.println("IOException: " + e.getMessage());
 			e.printStackTrace();
-		}
+		}//catch
 		synchronized(outFile){	
 			if (sourceOrProteinFeaturesListText != null){
 				ListIterator<String> sourceOrProteinFeatureTextLiterForWrite = sourceOrProteinFeaturesListText.listIterator();
@@ -581,9 +623,8 @@ public class SingleAnchorLinkRunnable extends PriorityRunnable{
 				writer.println("protein: " + currentProtien.toString());
 				writer.println("has no features");
 			}//else
-				writer.println();
-				writer.flush();
-			
+			writer.println();
+			writer.flush();
 			writer.close();
 		}//synch
 		

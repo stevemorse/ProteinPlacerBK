@@ -15,7 +15,7 @@ import java.io.IOException;
 public class FileCharReader {
 	
 	/**
-	 * reads and cleans a file of non-valid whitespace "characters" replaceing
+	 * reads and cleans a file of non-valid whitespace "characters" replacing
 	 * them with standard space characters.
 	 * @param inFile the file to read and clean
 	 * @return the entire file's cleaned data as a String

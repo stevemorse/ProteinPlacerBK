@@ -98,6 +98,19 @@ public class Protein extends Sequence{
 		return proteinSequenceStr;
 	}
 
+	public synchronized String listAllFoundRegionsInText(){
+		String allFoundRegionsInTextString = "All regions found in text are: \n";
+		List<String> regionAccessions = new ArrayList<String>(allFoundRegionsInText.keySet());
+		ListIterator<String> regionAccessionsLiter = regionAccessions.listIterator();
+		while(regionAccessionsLiter.hasNext()){
+			String currentAccession = regionAccessionsLiter.next();
+			allFoundRegionsInTextString = allFoundRegionsInTextString + "region: " 
+			+ allFoundRegionsInText.get(currentAccession) + " found for accession: " + currentAccession + "\n";
+		}//while
+		return allFoundRegionsInTextString;
+		
+	}
+	
 	public synchronized String toString(){
 		return "Protien [sequence= " +  sequence
 		+ ", proteinSequences = " + listAllProteinSequences()
@@ -109,7 +122,7 @@ public class Protein extends Sequence{
 		+ expressionPointText + ", expressionPointGoText= "
 		+ expressionPointGOText + ", expressionPointRBS= "
 		+ expressionPointRBS + ", expressionPointMLS= "
-		+ expressionPointMLS + "]\n" + listAllAnnotations();	
+		+ expressionPointMLS + "]\n" + listAllAnnotations() + listAllFoundRegionsInText();	
 	}
 
 	public synchronized List<String> getProteinSequences() {
