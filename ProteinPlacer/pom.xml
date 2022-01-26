@@ -24,26 +24,7 @@
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-server</artifactId>
     </dependency> 
-    <dependency>
-	    <groupId>jsoup</groupId>
-	    <artifactId>jsoup-sdk</artifactId>
-	    <version>1.6.1</version>
-	</dependency>
-	<dependency>
-	    <groupId>ncbi</groupId>
-	    <artifactId>ncbi-sdk</artifactId>
-	    <version>1.1.1</version>
-	</dependency>
-	<dependency>
-	    <groupId>jess</groupId>
-	    <artifactId>jess-sdk</artifactId>
-	    <version>7.1.2</version>
-	</dependency>
-	<dependency>
-	    <groupId>libsvm</groupId>
-	    <artifactId>libsvm-sdk</artifactId>
-	    <version>3.17.0</version>
-	</dependency>
+    
   </dependencies> 
 	
   <description>protein expression point finder</description>
